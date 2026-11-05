@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Alert, StyleSheet, Text, View } from 'react-native';
@@ -7,6 +7,7 @@ import { useColors } from '@/hooks/useColors';
 
 export default function TelemedicineScreen() {
   const colors = useColors();
+  const [provider, setProvider] = useState<'general' | 'resident' | null>(null);
   return (
     <Screen contentStyle={styles.page}>
       <View style={styles.header}>
@@ -20,6 +21,12 @@ export default function TelemedicineScreen() {
         <View style={{ width: 44 }} />
       </View>
 
+      <SurfaceCard style={styles.infoCard}>
+        <Text style={[styles.infoTitle,{color:colors.foreground}]}>เลือกผู้ให้คำปรึกษาก่อนโทร</Text>
+        <PrimaryButton title="แพทย์ทั่วไป · ผู้ใช้จำนวนมาก อาจต้องรอ" icon="users" onPress={()=>setProvider('general')} />
+        <PrimaryButton title="แพทย์ประจำบ้าน · ตัวอย่าง" icon="user" onPress={()=>setProvider('resident')} />
+        {provider?<Text style={[styles.infoText,{color:colors.secondaryForeground}]}>เลือกแล้ว: {provider==='general'?'แพทย์ทั่วไป':'แพทย์ประจำบ้าน'} · ระบบโทรยังเป็นหน้าจอจำลอง</Text>:null}
+      </SurfaceCard>
       <View style={[styles.callPanel, { backgroundColor: colors.primary }]}>
         <View style={styles.callOrb} />
         <View style={styles.videoTile}>
