@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Eyebrow, IconButton, Pill, PrimaryButton, Screen, SecondaryButton, SurfaceCard } from '@/components/UI';
 import { distanceInKm, Hospital, hospitals } from '@/constants/data';
 import { useMedtriage } from '@/context/MedtriageContext';
@@ -24,7 +24,10 @@ function departmentFor(text: string) {
 export default function RecommendedHospitalsScreen() {
   const colors = useColors();
   const { symptoms, bodyParts, location, setLocation, setSelectedHospital } = useMedtriage();
+  const params = useLocalSearchParams<{ urgent?: string }>();
+  const urgent = params.urgent === '1';
   const [locating, setLocating] = useState(false);
+  const [onTheWay, setOnTheWay] = useState<string | null>(null);
   const origin = location ?? BR1_REFERENCE;
   const department = departmentFor(`${symptoms} ${bodyParts.join(' ')}`);
   const matches = useMemo(() => [...hospitals]
@@ -51,6 +54,16 @@ export default function RecommendedHospitalsScreen() {
     finally { setLocating(false); }
   };
 
+  if (urgent) {
+    const urgentHospitals=[...hospitals].sort((a,b)=>distanceInKm(origin,a)-distanceInKm(origin,b)).slice(0,3);
+    const loadById:Record<string,string>={thammasat:'ปานกลาง',phatara:'น้อย','pat-rangsit':'น้อย','pathum-thani':'มาก','st-carlos':'ปานกลาง'};
+    return <Screen contentStyle={styles.page}>
+      <View style={styles.header}><IconButton icon="arrow-left" label="ย้อนกลับ" onPress={()=>router.back()}/><View style={styles.headerCopy}><Eyebrow>กรณีเร่งด่วน · ตัวอย่าง</Eyebrow><Text style={[styles.title,{color:colors.foreground}]}>ไปห้องฉุกเฉิน</Text></View><View style={{width:44}}/></View>
+      <View style={styles.urgentNotice}><Feather name="alert-triangle" size={27} color="#fff"/><Text style={styles.urgentHeading}>ควรไปโรงพยาบาลทันที</Text><Text style={styles.urgentCopy}>หากเป็นเหตุฉุกเฉิน โทร 1669 อย่ารอคิวหรือเลือกเวลานัด ข้อมูลความหนาแน่นนี้เป็นข้อมูลจำลอง ไม่ใช่สถานะสด</Text></View>
+      {urgentHospitals.map(h=>{const km=distanceInKm(origin,h);return <SurfaceCard key={h.id} style={styles.card}><Text style={[styles.name,{color:colors.foreground}]}>{h.name}</Text><Text style={[styles.area,{color:colors.mutedForeground}]}>{h.kind} · {km.toFixed(1)} กม.</Text><Text style={{color:loadById[h.id]==='น้อย'?'#238052':'#A56A00',fontWeight:'800'}}>ห้องฉุกเฉิน: {loadById[h.id]??'ปานกลาง'} · จำลอง</Text>{onTheWay===h.id?<Text style={{color:'#238052',fontWeight:'800'}}>รับทราบ กำลังไปโรงพยาบาลนี้</Text>:<PrimaryButton title="กำลังไปโรงพยาบาลนี้" icon="navigation" onPress={()=>{setSelectedHospital(h);setOnTheWay(h.id);}}/>}</SurfaceCard>})}
+      <PrimaryButton title="เรียกรถพยาบาล 1669" icon="phone" onPress={()=>{void Linking.openURL('tel:1669')}}/>
+    </Screen>;
+  }
   return (
     <Screen contentStyle={styles.page}>
       <View style={styles.header}><IconButton icon="arrow-left" label="ย้อนกลับ" onPress={() => router.back()} /><View style={styles.headerCopy}><Eyebrow>จากข้อมูลอาการที่กรอก</Eyebrow><Text style={[styles.title, { color: colors.foreground }]}>เลือกโรงพยาบาล</Text></View><View style={{ width: 44 }} /></View>
@@ -71,4 +84,4 @@ export default function RecommendedHospitalsScreen() {
   );
 }
 
-const styles = StyleSheet.create({ page: { gap: 14 }, header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, headerCopy: { alignItems: 'center', gap: 3 }, title: { fontSize: 18, fontWeight: '800' }, note: { borderRadius: 13, padding: 12, flexDirection: 'row', gap: 9, alignItems: 'flex-start' }, noteText: { flex: 1, fontSize: 12, lineHeight: 19, fontWeight: '600' }, locationRow: { flexDirection: 'row', alignItems: 'center', gap: 9 }, locationCopy: { flex: 1, gap: 3 }, locationTitle: { fontSize: 12, fontWeight: '700' }, locationSubtitle: { fontSize: 10 }, locationButton: { minHeight: 38, paddingHorizontal: 8 }, card: { gap: 11, padding: 14 }, photo: { height: 155, width: '100%', borderRadius: 15, backgroundColor: '#DCE9ED' }, photoPlaceholder: { height: 155, borderRadius: 15, alignItems: 'center', justifyContent: 'center', gap: 8 }, placeholderText: { fontSize: 11 }, nameRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 }, nameCopy: { flex: 1, gap: 3, minWidth: 0 }, name: { fontSize: 14, lineHeight: 20, fontWeight: '800', flexShrink: 1 }, area: { fontSize: 10 }, department: { fontSize: 12, lineHeight: 18, fontWeight: '700' }, distanceRow: { minHeight: 40, borderRadius: 11, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 7 }, distance: { flex: 1, fontSize: 12, fontWeight: '700' }, costBox: { padding: 11, borderRadius: 13, gap: 4 }, costLabel: { fontSize: 10 }, cost: { fontSize: 14, fontWeight: '800' }, costNote: { fontSize: 10, lineHeight: 15 } });
+const styles = StyleSheet.create({ urgentNotice:{backgroundColor:'#B4232D',borderRadius:17,padding:18,alignItems:'center',gap:8},urgentHeading:{color:'#fff',fontSize:22,fontWeight:'900',textAlign:'center'},urgentCopy:{color:'#fff',fontSize:13,lineHeight:20,textAlign:'center'},page: { gap: 14 }, header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, headerCopy: { alignItems: 'center', gap: 3 }, title: { fontSize: 18, fontWeight: '800' }, note: { borderRadius: 13, padding: 12, flexDirection: 'row', gap: 9, alignItems: 'flex-start' }, noteText: { flex: 1, fontSize: 12, lineHeight: 19, fontWeight: '600' }, locationRow: { flexDirection: 'row', alignItems: 'center', gap: 9 }, locationCopy: { flex: 1, gap: 3 }, locationTitle: { fontSize: 12, fontWeight: '700' }, locationSubtitle: { fontSize: 10 }, locationButton: { minHeight: 38, paddingHorizontal: 8 }, card: { gap: 11, padding: 14 }, photo: { height: 155, width: '100%', borderRadius: 15, backgroundColor: '#DCE9ED' }, photoPlaceholder: { height: 155, borderRadius: 15, alignItems: 'center', justifyContent: 'center', gap: 8 }, placeholderText: { fontSize: 11 }, nameRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 }, nameCopy: { flex: 1, gap: 3, minWidth: 0 }, name: { fontSize: 14, lineHeight: 20, fontWeight: '800', flexShrink: 1 }, area: { fontSize: 10 }, department: { fontSize: 12, lineHeight: 18, fontWeight: '700' }, distanceRow: { minHeight: 40, borderRadius: 11, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 7 }, distance: { flex: 1, fontSize: 12, fontWeight: '700' }, costBox: { padding: 11, borderRadius: 13, gap: 4 }, costLabel: { fontSize: 10 }, cost: { fontSize: 14, fontWeight: '800' }, costNote: { fontSize: 10, lineHeight: 15 } });
