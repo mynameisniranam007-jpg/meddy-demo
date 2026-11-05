@@ -14,7 +14,7 @@ export default function TelemedicineScreen() {
         <View style={styles.headerCopy}>
           <Eyebrow>Telemedicine</Eyebrow>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            ปรึกษาแพทย์ออนไลน์
+            ปรึกษานักศึกษาแพทย์
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -26,8 +26,8 @@ export default function TelemedicineScreen() {
           <View style={styles.doctorAvatar}>
             <Feather name="user" size={38} color={colors.secondaryForeground} />
           </View>
-          <Text style={styles.tileTitle}>แพทย์ตัวอย่าง</Text>
-          <Text style={styles.tileSub}>อายุรกรรมทั่วไป</Text>
+          <Text style={styles.tileTitle}>นักศึกษาแพทย์ตัวอย่าง</Text>
+          <Text style={styles.tileSub}>ให้ข้อมูลเบื้องต้น · ยังไม่ใช่บริการจริง</Text>
           <Pill tone="teal">ตัวอย่างหน้าจอ</Pill>
         </View>
         <View style={styles.callControls}>
@@ -47,7 +47,7 @@ export default function TelemedicineScreen() {
         <View style={styles.infoHeading}>
           <Feather name="info" size={18} color={colors.secondaryForeground} />
           <Text style={[styles.infoTitle, { color: colors.foreground }]}>
-            บริการนี้ยังไม่เชื่อมต่อแพทย์จริง
+            บริการนี้ยังไม่เชื่อมต่อนักศึกษาแพทย์จริง
           </Text>
         </View>
         <BodyText style={styles.infoText}>
