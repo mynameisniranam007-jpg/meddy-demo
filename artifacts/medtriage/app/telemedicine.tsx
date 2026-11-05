@@ -15,26 +15,27 @@ export default function TelemedicineScreen() {
         <View style={styles.headerCopy}>
           <Eyebrow>Telemedicine</Eyebrow>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            ปรึกษานักศึกษาแพทย์
+            ปรึกษาแพทย์
           </Text>
         </View>
         <View style={{ width: 44 }} />
       </View>
 
       <SurfaceCard style={styles.infoCard}>
-        <Text style={[styles.infoTitle,{color:colors.foreground}]}>เลือกผู้ให้คำปรึกษาก่อนโทร</Text>
-        <PrimaryButton title="แพทย์ทั่วไป · ผู้ใช้จำนวนมาก อาจต้องรอ" icon="users" onPress={()=>setProvider('general')} />
-        <PrimaryButton title="แพทย์ประจำบ้าน · ตัวอย่าง" icon="user" onPress={()=>setProvider('resident')} />
+        <Text style={[styles.infoTitle,{color:colors.foreground}]}>เลือกประเภทแพทย์ก่อนโทร</Text>
+        <PrimaryButton title="แพทย์ทั่วไป · ขณะนี้มีผู้ใช้จำนวนมาก อาจต้องรอสาย" icon="users" onPress={()=>setProvider('general')} />
+        <PrimaryButton title="แพทย์ประจำบ้าน · คิวตัวอย่าง" icon="user" onPress={()=>setProvider('resident')} />
         {provider?<Text style={[styles.infoText,{color:colors.secondaryForeground}]}>เลือกแล้ว: {provider==='general'?'แพทย์ทั่วไป':'แพทย์ประจำบ้าน'} · ระบบโทรยังเป็นหน้าจอจำลอง</Text>:null}
       </SurfaceCard>
+      {provider ? <>
       <View style={[styles.callPanel, { backgroundColor: colors.primary }]}>
         <View style={styles.callOrb} />
         <View style={styles.videoTile}>
           <View style={styles.doctorAvatar}>
             <Feather name="user" size={38} color={colors.secondaryForeground} />
           </View>
-          <Text style={styles.tileTitle}>นักศึกษาแพทย์ตัวอย่าง</Text>
-          <Text style={styles.tileSub}>ให้ข้อมูลเบื้องต้น · ยังไม่ใช่บริการจริง</Text>
+          <Text style={styles.tileTitle}>{provider === 'general' ? 'แพทย์ทั่วไปตัวอย่าง' : 'แพทย์ประจำบ้านตัวอย่าง'}</Text>
+          <Text style={styles.tileSub}>หน้าจอสาธิต · ไม่ได้เชื่อมต่อผู้ให้บริการจริง</Text>
           <Pill tone="teal">ตัวอย่างหน้าจอ</Pill>
         </View>
         <View style={styles.callControls}>
@@ -54,13 +55,15 @@ export default function TelemedicineScreen() {
         <View style={styles.infoHeading}>
           <Feather name="info" size={18} color={colors.secondaryForeground} />
           <Text style={[styles.infoTitle, { color: colors.foreground }]}>
-            บริการนี้ยังไม่เชื่อมต่อนักศึกษาแพทย์จริง
+            หน้านี้เป็นหน้าจอจำลอง ยังไม่ได้เชื่อมต่อแพทย์
           </Text>
         </View>
         <BodyText style={styles.infoText}>
           หน้านี้เป็นตัวอย่างการออกแบบ ไม่มีกล้องวิดีโอ เสียง หรือการปรึกษาทางการแพทย์
         </BodyText>
       </SurfaceCard>
+
+      </> : <SurfaceCard style={styles.infoCard}><Text style={[styles.infoText,{color:colors.mutedForeground}]}>เลือกประเภทแพทย์ด้านบนก่อน เพื่อเข้าสู่หน้าจอวิดีโอคอลตัวอย่าง</Text></SurfaceCard>}
 
       <PrimaryButton
         title="กลับไปหน้าหลัก"
