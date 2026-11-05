@@ -11,6 +11,7 @@ const examples: Record<string, { name: string; detail: string; level: number }[]
   'ศีรษะ': [
     { name: 'ปวดศีรษะจากความเครียด', detail: 'อาจพบร่วมกับพักผ่อนไม่พอหรือความเครียด หากปวดรุนแรงฉับพลันควรพบแพทย์', level: 1 },
     { name: 'ไมเกรน', detail: 'อาจมีปวดตุบ คลื่นไส้ หรือไวต่อแสง แต่ต้องให้บุคลากรประเมิน', level: 2 },
+    { name: 'ปวดศีรษะร่วมไข้: ไข้หวัดใหญ่หรือโควิดเป็นตัวอย่างหนึ่ง', detail: 'ไข้และปวดศีรษะเกิดได้จากหลายสาเหตุ เช่น ไข้หวัดใหญ่หรือโควิด ต้องพิจารณาอาการอื่นและตรวจโดยบุคลากร', level: 2 },
     { name: 'ปวดศีรษะรุนแรงฉับพลัน', detail: 'อาการรุนแรงฉับพลันหรือมีแขนขาอ่อนแรงเป็นสัญญาณที่ควรได้รับการดูแลทันที', level: 3 },
   ],
   'คอ': [
@@ -74,6 +75,8 @@ export default function ResultsScreen() {
       <SurfaceCard style={styles.severityCard}>
         <View style={styles.severityTop}><View style={[styles.severityIcon,{backgroundColor:priority.pale}]}><Feather name={urgent?'alert-triangle':'activity'} size={21} color={priority.color}/></View><View style={styles.severityCopy}><Text style={[styles.cardKicker,{color:colors.mutedForeground}]}>ตัวอย่างบริเวณ · {area}</Text><Text style={[styles.severityTitle,{color:colors.foreground}]}>{sample.name}</Text></View><View style={[styles.riskPill,{backgroundColor:priority.pale}]}><Text style={[styles.riskPillText,{color:priority.color}]}>{priority.label}</Text></View></View>
         <Text style={[styles.sampleDetail,{color:colors.foreground}]}>{sample.detail}</Text>
+        <View style={styles.progressTrack}>{['#32A66A','#8BBF48','#E4BB3E','#E98638','#D94B45'].map((color,index)=><View key={index} style={[styles.progressSegment,{backgroundColor:color,opacity:index===(sample.level===3?4:sample.level===2?2:0)?1:0.32}]}/>)}</View>
+        <View style={styles.scaleLabels}><Text style={[styles.scaleText,{color:'#238052'}]}>น้อย</Text><Text style={[styles.scaleText,{color:'#A56A00'}]}>ปานกลาง</Text><Text style={[styles.scaleText,{color:'#C83832'}]}>เร่งด่วน</Text></View>
       </SurfaceCard>
       <SurfaceCard style={styles.missingCard}><View style={styles.missingHeading}><Feather name="help-circle" size={18} color="#A46B05"/><Text style={[styles.missingTitle,{color:colors.foreground}]}>ข้อมูลประกอบ</Text></View><Text style={[styles.missingText,{color:colors.mutedForeground}]}>ผลนี้สุ่มจากตัวอย่างตามบริเวณที่เลือก ไม่ได้วิเคราะห์อาการจริง{symptoms.trim() ? ' และไม่ได้ตรวจสอบข้อความอาการ' : ''} ใช้เพื่อสาธิตเท่านั้น</Text><View style={styles.summaryTags}>{symptoms.trim()?<Pill tone="blue">มีข้อความอาการ</Pill>:null}{bodyParts.map(part=><Pill key={part} tone="neutral">{part}</Pill>)}{photoUri?<Pill tone="neutral">แนบภาพตัวอย่าง</Pill>:null}</View></SurfaceCard>
       {!urgent ? <View style={[styles.disclaimer,{backgroundColor:'#FFF4DE',borderColor:'#F0D9A5'}]}><Feather name="alert-triangle" size={17} color="#8C5D00"/><View style={styles.disclaimerCopy}><Text style={styles.disclaimerTitle}>ข้อควรทราบ</Text><Text style={styles.disclaimerBody}>หากอาการรุนแรงขึ้น หายใจลำบาก หมดสติ หรือเจ็บหน้าอกรุนแรง ให้โทร 1669 หรือไปห้องฉุกเฉิน</Text></View></View> : null}
