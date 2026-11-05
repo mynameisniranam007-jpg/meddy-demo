@@ -55,12 +55,12 @@ export default function RecommendedHospitalsScreen() {
   };
 
   if (urgent) {
-    const urgentHospitals=[...hospitals].sort((a,b)=>distanceInKm(origin,a)-distanceInKm(origin,b)).slice(0,3);
+    const urgentHospitals=[...hospitals].sort((a,b)=>distanceInKm(origin,a)-distanceInKm(origin,b)).slice(0,5);
     const loadById:Record<string,string>={thammasat:'ปานกลาง',phatara:'น้อย','pat-rangsit':'น้อย','pathum-thani':'มาก','st-carlos':'ปานกลาง'};
     return <Screen contentStyle={styles.page}>
       <View style={styles.header}><IconButton icon="arrow-left" label="ย้อนกลับ" onPress={()=>router.back()}/><View style={styles.headerCopy}><Eyebrow>กรณีเร่งด่วน · ตัวอย่าง</Eyebrow><Text style={[styles.title,{color:colors.foreground}]}>ไปห้องฉุกเฉิน</Text></View><View style={{width:44}}/></View>
       <View style={styles.urgentNotice}><Feather name="alert-triangle" size={27} color="#fff"/><Text style={styles.urgentHeading}>ควรไปโรงพยาบาลทันที</Text><Text style={styles.urgentCopy}>หากเป็นเหตุฉุกเฉิน โทร 1669 อย่ารอคิวหรือเลือกเวลานัด ข้อมูลความหนาแน่นนี้เป็นข้อมูลจำลอง ไม่ใช่สถานะสด</Text></View>
-      {urgentHospitals.map(h=>{const km=distanceInKm(origin,h);return <SurfaceCard key={h.id} style={styles.card}><Text style={[styles.name,{color:colors.foreground}]}>{h.name}</Text><Text style={[styles.area,{color:colors.mutedForeground}]}>{h.kind} · {km.toFixed(1)} กม.</Text><Text style={{color:loadById[h.id]==='น้อย'?'#238052':'#A56A00',fontWeight:'800'}}>ห้องฉุกเฉิน: {loadById[h.id]??'ปานกลาง'} · จำลอง</Text>{onTheWay===h.id?<Text style={{color:'#238052',fontWeight:'800'}}>รับทราบ กำลังไปโรงพยาบาลนี้</Text>:<PrimaryButton title="กำลังไปโรงพยาบาลนี้" icon="navigation" onPress={()=>{setSelectedHospital(h);setOnTheWay(h.id);}}/>}</SurfaceCard>})}
+      {urgentHospitals.map(h=>{const km=distanceInKm(origin,h);return <SurfaceCard key={h.id} style={styles.card}>{h.photoUrl?<Image source={{uri:h.photoUrl}} contentFit="cover" style={styles.photo}/>:<View style={[styles.photoPlaceholder,{backgroundColor:colors.secondary}]}><Feather name="plus-square" size={28} color={colors.secondaryForeground}/></View>}<Text style={[styles.name,{color:colors.foreground}]}>{h.name}</Text><Text style={[styles.area,{color:colors.mutedForeground}]}>{h.kind} · {km.toFixed(1)} กม.</Text><Text style={{color:loadById[h.id]==='น้อย'?'#238052':'#A56A00',fontWeight:'800'}}>ห้องฉุกเฉิน: {loadById[h.id]??'ปานกลาง'} · จำลอง</Text>{onTheWay===h.id?<Text style={{color:'#238052',fontWeight:'800'}}>รับทราบ กำลังไปโรงพยาบาลนี้</Text>:<PrimaryButton title="กำลังไปโรงพยาบาลนี้" icon="navigation" onPress={()=>{setSelectedHospital(h);setOnTheWay(h.id);}}/>}</SurfaceCard>})}
       <PrimaryButton title="เรียกรถพยาบาล 1669" icon="phone" onPress={()=>{void Linking.openURL('tel:1669')}}/>
     </Screen>;
   }
