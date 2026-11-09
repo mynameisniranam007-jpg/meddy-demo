@@ -1,4 +1,11 @@
-// Demo credentials and recovery challenges intentionally live only in memory.
+// Persist only salted password verifiers for this local prototype; OTP challenges stay in memory.
+import {
+  checkDemoPassword,
+  passwordVerifier,
+  readDemoAccounts,
+  updateDemoAccounts,
+} from "./demoAccounts";
+import { randomBytes } from "./random";
 // Configure an HTTPS auth service using the contract in AUTH_FLOW.md for real use.
 export type AuthSession = {
   userId: string;
@@ -9,7 +16,7 @@ export type AuthSession = {
 };
 const api = process.env.EXPO_PUBLIC_AUTH_API_URL?.replace(/\/$/, "");
 export const isDemoAuth = !api;
-const accounts = new Map<string, { password: string; session: AuthSession }>();
+
 let challenge: {
   id: string;
   identifier: string;
@@ -83,20 +90,30 @@ export async function registerAccount(
       password,
       displayName,
     });
-  if (accounts.has(identifier))
-    throw new Error("มีบัญชีนี้ในเซสชันทดลองแล้ว กรุณาเข้าสู่ระบบ");
-  const session = { userId: "demo-" + Date.now(), identifier, displayName };
-  accounts.set(identifier, { password, session });
+  const randomId = Array.from(randomBytes(16), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  const session: AuthSession = {
+    userId: "demo-" + randomId,
+    identifier,
+    displayName,
+  };
+  const verifier = await passwordVerifier(password);
+  await updateDemoAccounts(async (accounts) => {
+    if (accounts.some((account) => account.session.identifier === identifier))
+      throw new Error("มีบัญชีนี้ในอุปกรณ์แล้ว กรุณาเข้าสู่ระบบ");
+    return [...accounts, { session, verifier }];
+  });
   return session;
 }
 export async function signIn(identifier: string, password: string) {
   identifier = normalizeIdentifier(identifier);
   if (!isDemoAuth) return call<AuthSession>("/login", { identifier, password });
-  const account = accounts.get(identifier);
-  if (!account || account.password !== password)
-    throw new Error(
-      "อีเมล/เบอร์โทรหรือรหัสผ่านไม่ถูกต้อง บัญชีเดโมใช้ได้จนกว่าจะรีโหลดเว็บ",
-    );
+  const account = (await readDemoAccounts()).find(
+    (a) => a.session.identifier === identifier,
+  );
+  if (!account || !(await checkDemoPassword(account, password)))
+    throw new Error("อีเมล/เบอร์โทรหรือรหัสผ่านไม่ถูกต้อง");
   return account.session;
 }
 export async function requestOtp(
@@ -106,7 +123,11 @@ export async function requestOtp(
   if (!isDemoAuth) return call("/password/request", { identifier });
   if (challenge && Date.now() - challenge.sent < 30000)
     throw new Error("รอ 30 วินาทีก่อนขอรหัสใหม่");
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const bytes = randomBytes(4);
+  const number =
+    (bytes[0] * 0x1000000 + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3]) >>>
+    0;
+  const code = String(number % 1000000).padStart(6, "0");
   challenge = {
     id: "demo-" + Date.now(),
     identifier,
@@ -148,10 +169,20 @@ export async function resetPassword(resetToken: string, password: string) {
     challenge.expires < Date.now()
   )
     throw new Error("หมดเวลาตั้งรหัสผ่าน กรุณาขอ OTP ใหม่");
-  const account = accounts.get(challenge.identifier);
-  if (!account)
-    throw new Error("ไม่มีบัญชีทดลองในเซสชันนี้ กรุณาสมัครด้วยข้อมูลสมมติก่อน");
-  account.password = password;
+  const recovery = challenge;
+  const verifier = await passwordVerifier(password);
+  await updateDemoAccounts(async (accounts) => {
+    if (challenge !== recovery || recovery.expires < Date.now())
+      throw new Error("หมดเวลาตั้งรหัสผ่าน กรุณาขอ OTP ใหม่");
+    const account = accounts.find(
+      (a) => a.session.identifier === recovery.identifier,
+    );
+    if (!account)
+      throw new Error(
+        "ไม่มีบัญชีทดลองในอุปกรณ์นี้ กรุณาสมัครด้วยข้อมูลสมมติก่อน",
+      );
+    return accounts.map((a) => (a === account ? { ...a, verifier } : a));
+  });
   challenge = null;
 }
 export async function revokeSession(session: AuthSession) {

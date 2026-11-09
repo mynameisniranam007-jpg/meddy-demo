@@ -1,3 +1,4 @@
+import { KeyboardAwareForm } from "@/components/KeyboardAwareScrollViewCompat";
 import React, { useState } from "react";
 import { useMedtriage } from "@/context/MedtriageContext";
 import { cleanText } from "@/utils/auth";
@@ -21,11 +22,11 @@ import {
 import {
   calculateAge,
   calculateBmi,
-  emptyPatientProfile,
+  formatPatientName,
+  normalizePatientProfile,
   formatNationalId,
   formatPhone,
   PatientProfile,
-  PROFILE_STORAGE_KEY,
 } from "@/constants/profile";
 import { useColors } from "@/hooks/useColors";
 
@@ -44,8 +45,8 @@ export default function PatientProfileEditor({
 }: Props) {
   const colors = useColors();
   const { savePatientProfile } = useMedtriage();
-  const [profile, setProfile] = useState<PatientProfile>(
-    initialProfile ?? emptyPatientProfile,
+  const [profile, setProfile] = useState<PatientProfile>(() =>
+    normalizePatientProfile(initialProfile),
   );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -66,7 +67,7 @@ export default function PatientProfileEditor({
   };
 
   const save = async () => {
-    if (!(profile.firstName || profile.fullName).trim()) {
+    if (!profile.firstName.trim()) {
       setError("กรอกชื่อผู้ป่วย");
       return;
     }
@@ -94,19 +95,16 @@ export default function PatientProfileEditor({
     }
     setSaving(true);
     try {
-      const normalized = {
-        ...(Object.fromEntries(
+      const normalized = normalizePatientProfile({
+        ...Object.fromEntries(
           Object.entries(profile).map(([key, value]) => [
             key,
             cleanText(value, 2000),
           ]),
-        ) as PatientProfile),
-        fullName: cleanText(
-          `${profile.title}${profile.firstName || profile.fullName}${profile.lastName ? ` ${profile.lastName}` : ""}`,
-          200,
         ),
+        fullName: formatPatientName(profile),
         nationalId: profile.nationalId.replace(/\D/g, "").slice(0, 13),
-      };
+      });
       await savePatientProfile(normalized);
       onSaved(normalized);
     } catch {
@@ -117,531 +115,555 @@ export default function PatientProfileEditor({
   };
 
   return (
-    <SurfaceCard style={styles.formCard}>
-      <View style={styles.formHeading}>
-        <View style={[styles.formIcon, { backgroundColor: colors.secondary }]}>
-          <Feather
-            name="clipboard"
-            size={18}
-            color={colors.secondaryForeground}
-          />
-        </View>
-        <View style={styles.formHeadingCopy}>
-          <Text style={[styles.formTitle, { color: colors.foreground }]}>
-            {setup ? "กรอกประวัติก่อนเริ่มใช้งาน" : "แก้ไขประวัติส่วนตัว"}
-          </Text>
-          <Text style={[styles.formSub, { color: colors.mutedForeground }]}>
-            ข้อมูลนี้บันทึกไว้ในอุปกรณ์สำหรับโหมดตัวอย่าง
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={[styles.privacyNotice, { backgroundColor: colors.secondary }]}
-      >
-        <Feather name="lock" size={14} color={colors.secondaryForeground} />
-        <Text
-          style={[styles.privacyText, { color: colors.secondaryForeground }]}
-        >
-          ระบบยังไม่เชื่อม ThaID หรือพื้นที่จัดเก็บที่ปลอดภัย
-          กรุณาใช้ข้อมูลสมมติในเวอร์ชันทดลอง
-        </Text>
-      </View>
-
-      <SectionTitle title="ข้อมูลทั่วไป" />
-      <ChoiceGroup
-        label="คำนำหน้า"
-        options={["นาย", "นาง", "นางสาว"]}
-        value={profile.title}
-        onChange={(value) => update("title", value)}
-      />
-      <View style={styles.measurementRow}>
-        <LabeledField
-          half
-          label="ชื่อ"
-          value={profile.firstName || profile.fullName.split(" ")[0]}
-          onChangeText={(value) => update("firstName", value)}
-          placeholder="ชื่อ"
-        />
-        <LabeledField
-          half
-          label="นามสกุล"
-          value={profile.lastName}
-          onChangeText={(value) => update("lastName", value)}
-          placeholder="นามสกุล"
-        />
-      </View>
-      <LabeledField
-        label="เลขบัตรประชาชน"
-        value={formatNationalId(profile.nationalId)}
-        onChangeText={(value) =>
-          update("nationalId", value.replace(/\D/g, "").slice(0, 13))
-        }
-        placeholder="x-xxxx-xxxxx-xx-x"
-        keyboardType="number-pad"
-        maxLength={17}
-      />
-      <View style={styles.field}>
-        <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
-          วันเกิด
-        </Text>
-        <Pressable
-          onPress={() => {
-            setCalendarMonth(new Date());
-            setCalendarMode("days");
-            setCalendarOpen(true);
-          }}
-          style={[
-            styles.input,
-            {
-              borderColor: colors.input,
-              backgroundColor: colors.background,
-              justifyContent: "center",
-            },
-          ]}
-        >
-          <Text
-            style={{
-              color: profile.birthDate
-                ? colors.foreground
-                : colors.mutedForeground,
-            }}
+    <KeyboardAwareForm>
+      <SurfaceCard style={styles.formCard}>
+        <View style={styles.formHeading}>
+          <View
+            style={[styles.formIcon, { backgroundColor: colors.secondary }]}
           >
-            {profile.birthDate || "เลือกวันเกิดจากปฏิทิน"}
-          </Text>
-        </Pressable>
-      </View>
-      <Modal
-        visible={calendarOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCalendarOpen(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.calendar, { backgroundColor: colors.card }]}>
-            <View style={styles.calendarHead}>
-              {calendarMode === "days" ? (
-                <Pressable
-                  accessibilityLabel="เดือนก่อน"
-                  onPress={() =>
-                    setCalendarMonth(
-                      (m) => new Date(m.getFullYear(), m.getMonth() - 1, 1),
-                    )
-                  }
-                >
-                  <Feather
-                    name="chevron-left"
-                    size={22}
-                    color={colors.foreground}
-                  />
-                </Pressable>
-              ) : calendarMode === "years" ? (
-                <Pressable
-                  accessibilityLabel="สิบปีก่อน"
-                  onPress={() =>
-                    setYearPageStart((y) => Math.max(2400, y - 10))
-                  }
-                >
-                  <Feather
-                    name="chevron-left"
-                    size={22}
-                    color={colors.foreground}
-                  />
-                </Pressable>
-              ) : (
-                <View style={{ width: 22 }} />
-              )}
-              {calendarMode === "days" ? (
-                <Pressable
-                  onPress={() => setCalendarMode("months")}
-                  accessibilityRole="button"
-                  accessibilityLabel="เลือกเดือนและปี"
-                >
-                  <Text
-                    style={[styles.calendarTitle, { color: colors.foreground }]}
-                  >
-                    {new Intl.DateTimeFormat("th-TH", {
-                      month: "long",
-                      year: "numeric",
-                    }).format(calendarMonth)}{" "}
-                    ▾
-                  </Text>
-                </Pressable>
-              ) : calendarMode === "months" ? (
-                <Pressable
-                  onPress={() => {
-                    setYearPageStart(
-                      Math.floor((calendarMonth.getFullYear() + 543) / 10) *
-                        10 -
-                        9,
-                    );
-                    setCalendarMode("years");
-                  }}
-                >
-                  <Text
-                    style={[styles.calendarTitle, { color: colors.foreground }]}
-                  >
-                    {calendarMonth.getFullYear() + 543} ▾
-                  </Text>
-                </Pressable>
-              ) : (
-                <Text
-                  style={[styles.calendarTitle, { color: colors.foreground }]}
-                >
-                  {yearPageStart}–
-                  {Math.min(yearPageStart + 9, new Date().getFullYear() + 543)}
-                </Text>
-              )}
-              {calendarMode === "days" ? (
-                <Pressable
-                  accessibilityLabel="เดือนถัดไป"
-                  onPress={() =>
-                    setCalendarMonth(
-                      (m) => new Date(m.getFullYear(), m.getMonth() + 1, 1),
-                    )
-                  }
-                >
-                  <Feather
-                    name="chevron-right"
-                    size={22}
-                    color={colors.foreground}
-                  />
-                </Pressable>
-              ) : calendarMode === "years" ? (
-                <Pressable
-                  accessibilityLabel="สิบปีถัดไป"
-                  onPress={() =>
-                    setYearPageStart((y) =>
-                      Math.min(new Date().getFullYear() + 543 - 9, y + 10),
-                    )
-                  }
-                >
-                  <Feather
-                    name="chevron-right"
-                    size={22}
-                    color={colors.foreground}
-                  />
-                </Pressable>
-              ) : (
-                <View style={{ width: 22 }} />
-              )}
-            </View>
-            {calendarMode === "years" ? (
-              <View style={styles.calendarGrid}>
-                {Array.from({ length: 10 }, (_, i) => yearPageStart + i)
-                  .filter((year) => year <= new Date().getFullYear() + 543)
-                  .map((year) => (
-                    <Pressable
-                      key={year}
-                      onPress={() => {
-                        setCalendarMonth(
-                          (m) => new Date(year - 543, m.getMonth(), 1),
-                        );
-                        setCalendarMode("months");
-                      }}
-                      style={[
-                        styles.dayChoice,
-                        styles.yearChoice,
-                        {
-                          backgroundColor:
-                            calendarMonth.getFullYear() + 543 === year
-                              ? colors.primary
-                              : colors.background,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color:
-                            calendarMonth.getFullYear() + 543 === year
-                              ? colors.primaryForeground
-                              : colors.foreground,
-                          fontWeight: "700",
-                        }}
-                      >
-                        {year}
-                      </Text>
-                    </Pressable>
-                  ))}
-              </View>
-            ) : calendarMode === "months" ? (
-              <View style={styles.calendarGrid}>
-                {Array.from({ length: 12 }, (_, month) => month).map(
-                  (month) => (
-                    <Pressable
-                      key={month}
-                      onPress={() => {
-                        setCalendarMonth(
-                          (m) => new Date(m.getFullYear(), month, 1),
-                        );
-                        setCalendarMode("days");
-                      }}
-                      style={[
-                        styles.dayChoice,
-                        styles.monthChoice,
-                        {
-                          backgroundColor:
-                            calendarMonth.getMonth() === month
-                              ? colors.primary
-                              : colors.background,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color:
-                            calendarMonth.getMonth() === month
-                              ? colors.primaryForeground
-                              : colors.foreground,
-                          fontWeight: "700",
-                        }}
-                      >
-                        {new Intl.DateTimeFormat("th-TH", {
-                          month: "short",
-                        }).format(new Date(2020, month, 1))}
-                      </Text>
-                    </Pressable>
-                  ),
-                )}
-              </View>
-            ) : (
-              <View style={styles.calendarGrid}>
-                {["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"].map((d) => (
-                  <Text
-                    key={d}
-                    style={[styles.weekday, { color: colors.mutedForeground }]}
-                  >
-                    {d}
-                  </Text>
-                ))}
-                {Array.from(
-                  {
-                    length: new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth(),
-                      1,
-                    ).getDay(),
-                  },
-                  (_, i) => (
-                    <View key={`empty-${i}`} style={styles.calendarDay} />
-                  ),
-                )}
-                {Array.from(
-                  {
-                    length: new Date(
-                      calendarMonth.getFullYear(),
-                      calendarMonth.getMonth() + 1,
-                      0,
-                    ).getDate(),
-                  },
-                  (_, i) => {
-                    const day = i + 1;
-                    return (
-                      <Pressable
-                        key={day}
-                        style={[
-                          styles.calendarDay,
-                          styles.dayChoice,
-                          {
-                            backgroundColor:
-                              profile.birthDate ===
-                              `${String(day).padStart(2, "0")}/${String(calendarMonth.getMonth() + 1).padStart(2, "0")}/${calendarMonth.getFullYear() + 543}`
-                                ? colors.primary
-                                : "transparent",
-                          },
-                        ]}
-                        onPress={() => {
-                          update(
-                            "birthDate",
-                            `${String(day).padStart(2, "0")}/${String(calendarMonth.getMonth() + 1).padStart(2, "0")}/${calendarMonth.getFullYear() + 543}`,
-                          );
-                          setCalendarOpen(false);
-                        }}
-                      >
-                        <Text style={{ color: colors.foreground }}>{day}</Text>
-                      </Pressable>
-                    );
-                  },
-                )}
-              </View>
-            )}
-            <SecondaryButton
-              title="ปิด"
-              onPress={() => setCalendarOpen(false)}
+            <Feather
+              name="clipboard"
+              size={18}
+              color={colors.secondaryForeground}
             />
           </View>
+          <View style={styles.formHeadingCopy}>
+            <Text style={[styles.formTitle, { color: colors.foreground }]}>
+              {setup ? "กรอกประวัติก่อนเริ่มใช้งาน" : "แก้ไขประวัติส่วนตัว"}
+            </Text>
+            <Text style={[styles.formSub, { color: colors.mutedForeground }]}>
+              ข้อมูลนี้บันทึกไว้ในอุปกรณ์สำหรับโหมดตัวอย่าง
+            </Text>
+          </View>
         </View>
-      </Modal>
-      <Text
-        style={[styles.calculatedText, { color: colors.secondaryForeground }]}
-      >
-        อายุ: {age === null ? "กรอกวันเกิดเพื่อคำนวณอัตโนมัติ" : `${age} ปี`}
-      </Text>
-      <ChoiceGroup
-        label="เพศ"
-        options={["หญิง", "ชาย"]}
-        value={profile.gender}
-        onChange={(value) => update("gender", value)}
-      />
-      <LabeledField
-        label="เบอร์โทรศัพท์"
-        value={formatPhone(profile.phone)}
-        onChangeText={(value) =>
-          update("phone", value.replace(/\D/g, "").slice(0, 10))
-        }
-        placeholder="0xx-xxx-xxxx"
-        keyboardType="phone-pad"
-        maxLength={12}
-      />
-      <LabeledField
-        label="ที่อยู่"
-        value={profile.address}
-        onChangeText={(value) => update("address", value)}
-        placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด"
-        multiline
-      />
 
-      <SectionTitle title="ข้อมูลสุขภาพเบื้องต้น" />
-      <ChoiceGroup
-        label="กรุ๊ปเลือด"
-        options={["A", "B", "AB", "O", "ไม่ทราบ"]}
-        value={profile.bloodGroup}
-        onChange={(value) => update("bloodGroup", value)}
-      />
-      <ChoiceGroup
-        label="Rh factor"
-        options={["Rh+", "Rh-", "ไม่ทราบ"]}
-        value={profile.rhFactor}
-        onChange={(value) => update("rhFactor", value)}
-      />
-      {profile.bloodGroup === "ไม่ทราบ" || profile.rhFactor === "ไม่ทราบ" ? (
-        <Text style={[styles.helpText, { color: colors.secondaryForeground }]}>
-          หากไม่ทราบกรุ๊ปเลือดหรือ Rh factor
-          แนะนำตรวจเลือดที่สถานพยาบาลก่อนบันทึกข้อมูล
-        </Text>
-      ) : null}
-      <View style={styles.measurementRow}>
-        <LabeledField
-          half
-          label="น้ำหนัก (กก.)"
-          value={profile.weightKg}
-          onChangeText={(value) => update("weightKg", value)}
-          placeholder="เช่น 60"
-          keyboardType="decimal-pad"
-        />
-        <LabeledField
-          half
-          label="ส่วนสูง (ซม.)"
-          value={profile.heightCm}
-          onChangeText={(value) => update("heightCm", value)}
-          placeholder="เช่น 165"
-          keyboardType="decimal-pad"
-        />
-      </View>
-      <View style={[styles.bmiBox, { backgroundColor: colors.background }]}>
-        <Feather name="activity" size={15} color={colors.secondaryForeground} />
-        <Text style={[styles.bmiText, { color: colors.foreground }]}>
-          BMI:{" "}
-          {bmi === null ? "กรอกน้ำหนักและส่วนสูงเพื่อคำนวณ" : bmi.toFixed(1)}
-        </Text>
-      </View>
-      <LabeledField
-        label="โรคประจำตัว"
-        value={profile.conditions}
-        onChangeText={(value) => update("conditions", value)}
-        placeholder="หากไม่มี กรุณากรอก “ไม่มี”"
-        multiline
-        minHeight={88}
-      />
-      <LabeledField
-        label="ประวัติแพ้ยา"
-        value={profile.drugAllergies}
-        onChangeText={(value) => update("drugAllergies", value)}
-        placeholder="ชื่อยาและอาการแพ้ หรือกรอก “ไม่มี”"
-        multiline
-        minHeight={112}
-      />
-      <LabeledField
-        label="ประวัติแพ้อาหาร"
-        value={profile.foodAllergies}
-        onChangeText={(value) => update("foodAllergies", value)}
-        placeholder="ชนิดอาหาร/อาการ หรือกรอก “ไม่มี”"
-        multiline
-      />
-      <LabeledField
-        label="ยาที่ใช้ประจำ"
-        value={profile.medications}
-        onChangeText={(value) => update("medications", value)}
-        placeholder="ชื่อยา/ขนาดยา หรือกรอก “ไม่มี”"
-        multiline
-      />
-
-      <SectionTitle title="ผู้ติดต่อฉุกเฉินและสิทธิรักษา" />
-      <LabeledField
-        label="ชื่อผู้ติดต่อฉุกเฉิน"
-        value={profile.emergencyName}
-        onChangeText={(value) => update("emergencyName", value)}
-        placeholder="ชื่อ-นามสกุล"
-      />
-      <LabeledField
-        label="ความสัมพันธ์"
-        value={profile.emergencyRelation}
-        onChangeText={(value) => update("emergencyRelation", value)}
-        placeholder="เช่น บิดา มารดา คู่สมรส"
-      />
-      <LabeledField
-        label="เบอร์ผู้ติดต่อฉุกเฉิน"
-        value={formatPhone(profile.emergencyPhone)}
-        onChangeText={(value) =>
-          update("emergencyPhone", value.replace(/\D/g, "").slice(0, 10))
-        }
-        placeholder="08x-xxx-xxxx"
-        keyboardType="phone-pad"
-        maxLength={12}
-      />
-      <ChoiceGroup
-        label="สิทธิการรักษา"
-        options={[
-          "บัตรทอง",
-          "ประกันสังคม",
-          "ข้าราชการ",
-          "ประกันเอกชน",
-          "จ่ายเอง",
-        ]}
-        value={profile.coverage}
-        onChange={(value) => update("coverage", value)}
-      />
-
-      {error ? (
-        <Text
-          accessibilityRole="alert"
-          style={[styles.errorText, { color: colors.destructive }]}
+        <View
+          style={[styles.privacyNotice, { backgroundColor: colors.secondary }]}
         >
-          {error}
+          <Feather name="lock" size={14} color={colors.secondaryForeground} />
+          <Text
+            style={[styles.privacyText, { color: colors.secondaryForeground }]}
+          >
+            ระบบยังไม่เชื่อม ThaID หรือพื้นที่จัดเก็บที่ปลอดภัย
+            กรุณาใช้ข้อมูลสมมติในเวอร์ชันทดลอง
+          </Text>
+        </View>
+
+        <SectionTitle title="ข้อมูลทั่วไป" />
+        <ChoiceGroup
+          label="คำนำหน้า"
+          options={["นาย", "นาง", "นางสาว"]}
+          value={profile.title}
+          onChange={(value) => update("title", value)}
+        />
+        <View style={styles.measurementRow}>
+          <LabeledField
+            half
+            label="ชื่อ"
+            value={profile.firstName}
+            onChangeText={(value) => update("firstName", value)}
+            placeholder="ชื่อ"
+          />
+          <LabeledField
+            half
+            label="นามสกุล"
+            value={profile.lastName}
+            onChangeText={(value) => update("lastName", value)}
+            placeholder="นามสกุล"
+          />
+        </View>
+        <LabeledField
+          label="เลขบัตรประชาชน"
+          value={formatNationalId(profile.nationalId)}
+          onChangeText={(value) =>
+            update("nationalId", value.replace(/\D/g, "").slice(0, 13))
+          }
+          placeholder="x-xxxx-xxxxx-xx-x"
+          keyboardType="number-pad"
+          maxLength={17}
+        />
+        <View style={styles.field}>
+          <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+            วันเกิด
+          </Text>
+          <Pressable
+            onPress={() => {
+              setCalendarMonth(new Date());
+              setCalendarMode("days");
+              setCalendarOpen(true);
+            }}
+            style={[
+              styles.input,
+              {
+                borderColor: colors.input,
+                backgroundColor: colors.background,
+                justifyContent: "center",
+              },
+            ]}
+          >
+            <Text
+              style={{
+                color: profile.birthDate
+                  ? colors.foreground
+                  : colors.mutedForeground,
+              }}
+            >
+              {profile.birthDate || "เลือกวันเกิดจากปฏิทิน"}
+            </Text>
+          </Pressable>
+        </View>
+        <Modal
+          visible={calendarOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCalendarOpen(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={[styles.calendar, { backgroundColor: colors.card }]}>
+              <View style={styles.calendarHead}>
+                {calendarMode === "days" ? (
+                  <Pressable
+                    accessibilityLabel="เดือนก่อน"
+                    onPress={() =>
+                      setCalendarMonth(
+                        (m) => new Date(m.getFullYear(), m.getMonth() - 1, 1),
+                      )
+                    }
+                  >
+                    <Feather
+                      name="chevron-left"
+                      size={22}
+                      color={colors.foreground}
+                    />
+                  </Pressable>
+                ) : calendarMode === "years" ? (
+                  <Pressable
+                    accessibilityLabel="สิบปีก่อน"
+                    onPress={() =>
+                      setYearPageStart((y) => Math.max(2400, y - 10))
+                    }
+                  >
+                    <Feather
+                      name="chevron-left"
+                      size={22}
+                      color={colors.foreground}
+                    />
+                  </Pressable>
+                ) : (
+                  <View style={{ width: 22 }} />
+                )}
+                {calendarMode === "days" ? (
+                  <Pressable
+                    onPress={() => setCalendarMode("months")}
+                    accessibilityRole="button"
+                    accessibilityLabel="เลือกเดือนและปี"
+                  >
+                    <Text
+                      style={[
+                        styles.calendarTitle,
+                        { color: colors.foreground },
+                      ]}
+                    >
+                      {new Intl.DateTimeFormat("th-TH", {
+                        month: "long",
+                        year: "numeric",
+                      }).format(calendarMonth)}{" "}
+                      ▾
+                    </Text>
+                  </Pressable>
+                ) : calendarMode === "months" ? (
+                  <Pressable
+                    onPress={() => {
+                      setYearPageStart(
+                        Math.floor((calendarMonth.getFullYear() + 543) / 10) *
+                          10 -
+                          9,
+                      );
+                      setCalendarMode("years");
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.calendarTitle,
+                        { color: colors.foreground },
+                      ]}
+                    >
+                      {calendarMonth.getFullYear() + 543} ▾
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Text
+                    style={[styles.calendarTitle, { color: colors.foreground }]}
+                  >
+                    {yearPageStart}–
+                    {Math.min(
+                      yearPageStart + 9,
+                      new Date().getFullYear() + 543,
+                    )}
+                  </Text>
+                )}
+                {calendarMode === "days" ? (
+                  <Pressable
+                    accessibilityLabel="เดือนถัดไป"
+                    onPress={() =>
+                      setCalendarMonth(
+                        (m) => new Date(m.getFullYear(), m.getMonth() + 1, 1),
+                      )
+                    }
+                  >
+                    <Feather
+                      name="chevron-right"
+                      size={22}
+                      color={colors.foreground}
+                    />
+                  </Pressable>
+                ) : calendarMode === "years" ? (
+                  <Pressable
+                    accessibilityLabel="สิบปีถัดไป"
+                    onPress={() =>
+                      setYearPageStart((y) =>
+                        Math.min(new Date().getFullYear() + 543 - 9, y + 10),
+                      )
+                    }
+                  >
+                    <Feather
+                      name="chevron-right"
+                      size={22}
+                      color={colors.foreground}
+                    />
+                  </Pressable>
+                ) : (
+                  <View style={{ width: 22 }} />
+                )}
+              </View>
+              {calendarMode === "years" ? (
+                <View style={styles.calendarGrid}>
+                  {Array.from({ length: 10 }, (_, i) => yearPageStart + i)
+                    .filter((year) => year <= new Date().getFullYear() + 543)
+                    .map((year) => (
+                      <Pressable
+                        key={year}
+                        onPress={() => {
+                          setCalendarMonth(
+                            (m) => new Date(year - 543, m.getMonth(), 1),
+                          );
+                          setCalendarMode("months");
+                        }}
+                        style={[
+                          styles.dayChoice,
+                          styles.yearChoice,
+                          {
+                            backgroundColor:
+                              calendarMonth.getFullYear() + 543 === year
+                                ? colors.primary
+                                : colors.background,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={{
+                            color:
+                              calendarMonth.getFullYear() + 543 === year
+                                ? colors.primaryForeground
+                                : colors.foreground,
+                            fontWeight: "700",
+                          }}
+                        >
+                          {year}
+                        </Text>
+                      </Pressable>
+                    ))}
+                </View>
+              ) : calendarMode === "months" ? (
+                <View style={styles.calendarGrid}>
+                  {Array.from({ length: 12 }, (_, month) => month).map(
+                    (month) => (
+                      <Pressable
+                        key={month}
+                        onPress={() => {
+                          setCalendarMonth(
+                            (m) => new Date(m.getFullYear(), month, 1),
+                          );
+                          setCalendarMode("days");
+                        }}
+                        style={[
+                          styles.dayChoice,
+                          styles.monthChoice,
+                          {
+                            backgroundColor:
+                              calendarMonth.getMonth() === month
+                                ? colors.primary
+                                : colors.background,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={{
+                            color:
+                              calendarMonth.getMonth() === month
+                                ? colors.primaryForeground
+                                : colors.foreground,
+                            fontWeight: "700",
+                          }}
+                        >
+                          {new Intl.DateTimeFormat("th-TH", {
+                            month: "short",
+                          }).format(new Date(2020, month, 1))}
+                        </Text>
+                      </Pressable>
+                    ),
+                  )}
+                </View>
+              ) : (
+                <View style={styles.calendarGrid}>
+                  {["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"].map((d) => (
+                    <Text
+                      key={d}
+                      style={[
+                        styles.weekday,
+                        { color: colors.mutedForeground },
+                      ]}
+                    >
+                      {d}
+                    </Text>
+                  ))}
+                  {Array.from(
+                    {
+                      length: new Date(
+                        calendarMonth.getFullYear(),
+                        calendarMonth.getMonth(),
+                        1,
+                      ).getDay(),
+                    },
+                    (_, i) => (
+                      <View key={`empty-${i}`} style={styles.calendarDay} />
+                    ),
+                  )}
+                  {Array.from(
+                    {
+                      length: new Date(
+                        calendarMonth.getFullYear(),
+                        calendarMonth.getMonth() + 1,
+                        0,
+                      ).getDate(),
+                    },
+                    (_, i) => {
+                      const day = i + 1;
+                      return (
+                        <Pressable
+                          key={day}
+                          style={[
+                            styles.calendarDay,
+                            styles.dayChoice,
+                            {
+                              backgroundColor:
+                                profile.birthDate ===
+                                `${String(day).padStart(2, "0")}/${String(calendarMonth.getMonth() + 1).padStart(2, "0")}/${calendarMonth.getFullYear() + 543}`
+                                  ? colors.primary
+                                  : "transparent",
+                            },
+                          ]}
+                          onPress={() => {
+                            update(
+                              "birthDate",
+                              `${String(day).padStart(2, "0")}/${String(calendarMonth.getMonth() + 1).padStart(2, "0")}/${calendarMonth.getFullYear() + 543}`,
+                            );
+                            setCalendarOpen(false);
+                          }}
+                        >
+                          <Text style={{ color: colors.foreground }}>
+                            {day}
+                          </Text>
+                        </Pressable>
+                      );
+                    },
+                  )}
+                </View>
+              )}
+              <SecondaryButton
+                title="ปิด"
+                onPress={() => setCalendarOpen(false)}
+              />
+            </View>
+          </View>
+        </Modal>
+        <Text
+          style={[styles.calculatedText, { color: colors.secondaryForeground }]}
+        >
+          อายุ: {age === null ? "กรอกวันเกิดเพื่อคำนวณอัตโนมัติ" : `${age} ปี`}
         </Text>
-      ) : null}
-      <View style={styles.formActions}>
-        {!setup && onCancel ? (
-          <SecondaryButton
-            title="ยกเลิก"
-            onPress={onCancel}
+        <ChoiceGroup
+          label="เพศ"
+          options={["หญิง", "ชาย"]}
+          value={profile.gender}
+          onChange={(value) => update("gender", value)}
+        />
+        <LabeledField
+          label="เบอร์โทรศัพท์"
+          value={formatPhone(profile.phone)}
+          onChangeText={(value) =>
+            update("phone", value.replace(/\D/g, "").slice(0, 10))
+          }
+          placeholder="0xx-xxx-xxxx"
+          keyboardType="phone-pad"
+          maxLength={12}
+        />
+        <LabeledField
+          label="ที่อยู่"
+          value={profile.address}
+          onChangeText={(value) => update("address", value)}
+          placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด"
+          multiline
+        />
+
+        <SectionTitle title="ข้อมูลสุขภาพเบื้องต้น" />
+        <ChoiceGroup
+          label="กรุ๊ปเลือด"
+          options={["A", "B", "AB", "O", "ไม่ทราบ"]}
+          value={profile.bloodGroup}
+          onChange={(value) => update("bloodGroup", value)}
+        />
+        <ChoiceGroup
+          label="Rh factor"
+          options={["Rh+", "Rh-", "ไม่ทราบ"]}
+          value={profile.rhFactor}
+          onChange={(value) => update("rhFactor", value)}
+        />
+        {profile.bloodGroup === "ไม่ทราบ" || profile.rhFactor === "ไม่ทราบ" ? (
+          <Text
+            style={[styles.helpText, { color: colors.secondaryForeground }]}
+          >
+            หากไม่ทราบกรุ๊ปเลือดหรือ Rh factor
+            แนะนำตรวจเลือดที่สถานพยาบาลก่อนบันทึกข้อมูล
+          </Text>
+        ) : null}
+        <View style={styles.measurementRow}>
+          <LabeledField
+            half
+            label="น้ำหนัก (กก.)"
+            value={profile.weightKg}
+            onChangeText={(value) => update("weightKg", value)}
+            placeholder="เช่น 60"
+            keyboardType="decimal-pad"
+          />
+          <LabeledField
+            half
+            label="ส่วนสูง (ซม.)"
+            value={profile.heightCm}
+            onChangeText={(value) => update("heightCm", value)}
+            placeholder="เช่น 165"
+            keyboardType="decimal-pad"
+          />
+        </View>
+        <View style={[styles.bmiBox, { backgroundColor: colors.background }]}>
+          <Feather
+            name="activity"
+            size={15}
+            color={colors.secondaryForeground}
+          />
+          <Text style={[styles.bmiText, { color: colors.foreground }]}>
+            BMI:{" "}
+            {bmi === null ? "กรอกน้ำหนักและส่วนสูงเพื่อคำนวณ" : bmi.toFixed(1)}
+          </Text>
+        </View>
+        <LabeledField
+          label="โรคประจำตัว"
+          value={profile.conditions}
+          onChangeText={(value) => update("conditions", value)}
+          placeholder="หากไม่มี กรุณากรอก “ไม่มี”"
+          multiline
+          minHeight={88}
+        />
+        <LabeledField
+          label="ประวัติแพ้ยา"
+          value={profile.drugAllergies}
+          onChangeText={(value) => update("drugAllergies", value)}
+          placeholder="ชื่อยาและอาการแพ้ หรือกรอก “ไม่มี”"
+          multiline
+          minHeight={112}
+        />
+        <LabeledField
+          label="ประวัติแพ้อาหาร"
+          value={profile.foodAllergies}
+          onChangeText={(value) => update("foodAllergies", value)}
+          placeholder="ชนิดอาหาร/อาการ หรือกรอก “ไม่มี”"
+          multiline
+        />
+        <LabeledField
+          label="ยาที่ใช้ประจำ"
+          value={profile.medications}
+          onChangeText={(value) => update("medications", value)}
+          placeholder="ชื่อยา/ขนาดยา หรือกรอก “ไม่มี”"
+          multiline
+        />
+
+        <SectionTitle title="ผู้ติดต่อฉุกเฉินและสิทธิรักษา" />
+        <LabeledField
+          label="ชื่อผู้ติดต่อฉุกเฉิน"
+          value={profile.emergencyName}
+          onChangeText={(value) => update("emergencyName", value)}
+          placeholder="ชื่อ-นามสกุล"
+        />
+        <LabeledField
+          label="ความสัมพันธ์"
+          value={profile.emergencyRelation}
+          onChangeText={(value) => update("emergencyRelation", value)}
+          placeholder="เช่น บิดา มารดา คู่สมรส"
+        />
+        <LabeledField
+          label="เบอร์ผู้ติดต่อฉุกเฉิน"
+          value={formatPhone(profile.emergencyPhone)}
+          onChangeText={(value) =>
+            update("emergencyPhone", value.replace(/\D/g, "").slice(0, 10))
+          }
+          placeholder="08x-xxx-xxxx"
+          keyboardType="phone-pad"
+          maxLength={12}
+        />
+        <ChoiceGroup
+          label="สิทธิการรักษา"
+          options={[
+            "บัตรทอง",
+            "ประกันสังคม",
+            "ข้าราชการ",
+            "ประกันเอกชน",
+            "จ่ายเอง",
+          ]}
+          value={profile.coverage}
+          onChange={(value) => update("coverage", value)}
+        />
+
+        {error ? (
+          <Text
+            accessibilityRole="alert"
+            style={[styles.errorText, { color: colors.destructive }]}
+          >
+            {error}
+          </Text>
+        ) : null}
+        <View style={styles.formActions}>
+          {!setup && onCancel ? (
+            <SecondaryButton
+              title="ยกเลิก"
+              onPress={onCancel}
+              style={styles.actionButton}
+            />
+          ) : null}
+          <PrimaryButton
+            title={setup ? "บันทึกและเริ่มใช้งาน" : "บันทึก"}
+            icon="check"
+            onPress={() => void save()}
+            loading={saving}
+            testID="save-patient-profile"
             style={styles.actionButton}
           />
-        ) : null}
-        <PrimaryButton
-          title={setup ? "บันทึกและเริ่มใช้งาน" : "บันทึก"}
-          icon="check"
-          onPress={() => void save()}
-          loading={saving}
-          testID="save-patient-profile"
-          style={styles.actionButton}
-        />
-      </View>
-      <BodyText style={styles.requiredNote}>
-        * กรอกเฉพาะข้อมูลที่ทราบ ข้อมูลแพ้ยาที่ยังว่างหมายถึงยังไม่ทราบ
-        ไม่ใช่ไม่มีประวัติแพ้
-      </BodyText>
-    </SurfaceCard>
+        </View>
+        <BodyText style={styles.requiredNote}>
+          * กรอกเฉพาะข้อมูลที่ทราบ ข้อมูลแพ้ยาที่ยังว่างหมายถึงยังไม่ทราบ
+          ไม่ใช่ไม่มีประวัติแพ้
+        </BodyText>
+      </SurfaceCard>
+    </KeyboardAwareForm>
   );
 }
 

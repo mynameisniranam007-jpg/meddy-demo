@@ -90,6 +90,7 @@ export default function BookingScreen() {
     requestProfile,
     bookingDraft,
     setBookingDraft,
+    pendingTriageSession,
   } = useMedtriage();
   const draft = bookingDraft?.hospitalId === hospital.id ? bookingDraft : null;
   const days = useMemo(
@@ -209,6 +210,36 @@ export default function BookingScreen() {
       </View>
 
       <FamilyProfiles />
+      <SurfaceCard style={{ gap: 8 }}>
+        <SectionTitle title="ผู้ป่วยสำหรับการจองนี้" />
+        <BodyText>
+          {activePatient?.profile.fullName || "เลือกผู้ป่วยหลังเข้าสู่ระบบ"}
+        </BodyText>
+        {pendingTriageSession ? (
+          <>
+            <Text style={{ color: colors.foreground, fontWeight: "700" }}>
+              ข้อมูลคัดกรองที่เลือกไว้
+            </Text>
+            <BodyText>
+              {pendingTriageSession.symptoms ||
+                pendingTriageSession.bodyParts.join(" · ") ||
+                "แนบภาพอาการ"}
+            </BodyText>
+            {pendingTriageSession.assessment ? (
+              <BodyText>
+                {pendingTriageSession.assessment.name} · ระดับตัวอย่าง:{" "}
+                {pendingTriageSession.assessment.level === 3
+                  ? "เร่งด่วน"
+                  : pendingTriageSession.assessment.level === 2
+                    ? "ปานกลาง"
+                    : "น้อย"}
+              </BodyText>
+            ) : null}
+          </>
+        ) : (
+          <BodyText>ยังไม่มีข้อมูลคัดกรองในรายการนี้</BodyText>
+        )}
+      </SurfaceCard>
       <SectionTitle
         title="เลือกแพทย์"
         detail="รายชื่อแพทย์ตัวอย่าง ชาย 3 คน หญิง 2 คน · คิวจำลองแยกตามแพทย์"

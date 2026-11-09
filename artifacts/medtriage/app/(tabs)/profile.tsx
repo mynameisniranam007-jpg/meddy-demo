@@ -69,7 +69,7 @@ export default function ProfileScreen() {
         <View style={styles.profileCopy}>
           <Pill tone="neutral">บัญชีตัวอย่าง</Pill>
           <Text style={[styles.name, { color: colors.foreground }]}>
-            ข้อมูลส่วนตัวและสุขภาพ
+            {activePatient?.profile.fullName || "ข้อมูลส่วนตัวและสุขภาพ"}
           </Text>
           <Text style={[styles.profileSub, { color: colors.mutedForeground }]}>
             บันทึกไว้ในอุปกรณ์นี้เท่านั้น
@@ -233,7 +233,7 @@ export default function ProfileScreen() {
       <ConfirmationDialog
         visible={showLogoutConfirm}
         title="ออกจากระบบและลบข้อมูล?"
-        message="แอปทดลองนี้จะลบโปรไฟล์ ประวัติอาการ และนัดหมายตัวอย่างออกจากอุปกรณ์ แล้วกลับไปหน้าแรกเพื่อเลือกเข้าสู่ระบบ สมัครสมาชิก หรือทดลองแบบไม่ระบุตัวตน"
+        message="แอปทดลองนี้จะลบโปรไฟล์สุขภาพ ประวัติอาการ และนัดหมายออกจากอุปกรณ์ แล้วกลับไปหน้าแรก บัญชีทดลองยังใช้เข้าสู่ระบบครั้งต่อไปได้"
         confirmLabel="ลบข้อมูลและออก"
         icon="log-out"
         onCancel={() => setShowLogoutConfirm(false)}

@@ -14,32 +14,54 @@ import FamilyProfiles from "@/components/FamilyProfiles";
 import PatientProfileSection from "@/components/PatientProfileSection";
 import { useMedtriage } from "@/context/MedtriageContext";
 import { cleanText } from "@/utils/auth";
-import { formatPhone } from "@/constants/profile";
+import {
+  formatPatientName,
+  normalizePatientProfile,
+  formatPhone,
+} from "@/constants/profile";
 export default function ProfileSetupScreen() {
-  const { session, activePatient, savePatientProfile, resumeAfterAuth } =
-    useMedtriage();
-  const [name, setName] = useState("");
+  const {
+    session,
+    activePatient,
+    savePatientProfile,
+    resumeAfterAuth,
+    skipProfileSetup,
+  } = useMedtriage();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(false);
   useEffect(() => {
-    setName(activePatient?.profile.fullName ?? "");
+    const profile = normalizePatientProfile(activePatient?.profile);
+    setFirstName(profile.firstName);
+    setLastName(profile.lastName);
     setPhone(activePatient?.profile.phone ?? "");
     setError("");
     setExpanded(false);
-  }, [activePatient?.id]);
+  }, [
+    activePatient?.id,
+    activePatient?.profile.firstName,
+    activePatient?.profile.lastName,
+    activePatient?.profile.phone,
+  ]);
   const save = async () => {
     if (busy || !activePatient) return;
     setBusy(true);
     setError("");
     try {
-      if (!cleanText(name, 100) || !/^0\d{9}$/.test(phone))
+      if (!cleanText(firstName, 100) || !/^0\d{9}$/.test(phone))
         throw new Error("กรอกชื่อและเบอร์โทรผู้ป่วย 10 หลัก");
       await savePatientProfile({
         ...activePatient.profile,
-        fullName: cleanText(name, 100),
-        firstName: cleanText(name, 100),
+        firstName: cleanText(firstName, 100),
+        lastName: cleanText(lastName, 100),
+        fullName: formatPatientName({
+          ...activePatient.profile,
+          firstName: cleanText(firstName, 100),
+          lastName: cleanText(lastName, 100),
+        }),
         phone,
       });
       resumeAfterAuth();
@@ -74,8 +96,14 @@ export default function ProfileSetupScreen() {
       <SurfaceCard style={{ gap: 18 }}>
         <AuthField
           label="ชื่อผู้ป่วย"
-          value={name}
-          onChangeText={setName}
+          value={firstName}
+          onChangeText={setFirstName}
+          maxLength={100}
+        />
+        <AuthField
+          label="นามสกุลผู้ป่วย"
+          value={lastName}
+          onChangeText={setLastName}
           maxLength={100}
         />
         <AuthField
@@ -97,7 +125,7 @@ export default function ProfileSetupScreen() {
         />
         <SecondaryButton
           title="ข้ามไปก่อน (Skip)"
-          onPress={resumeAfterAuth}
+          onPress={skipProfileSetup}
           disabled={busy}
         />
       </SurfaceCard>

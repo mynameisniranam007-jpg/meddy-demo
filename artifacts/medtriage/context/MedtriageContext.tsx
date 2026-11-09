@@ -1,110 +1,190 @@
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
+import { Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Href, router } from "expo-router";
-import { Appointment, Hospital } from "@/constants/data";
-import { emptyPatientProfile, PatientProfile } from "@/constants/profile";
-import { AuthSession, cleanText, revokeSession } from "@/utils/auth";
+import { Appointment, Hospital, hospitals } from "@/constants/data";
+import {
+  emptyPatientProfile,
+  formatPatientName,
+  normalizePatientProfile,
+  PatientProfile,
+} from "@/constants/profile";
+import {
+  AuthSession,
+  cleanText,
+  isDemoAuth,
+  revokeSession,
+} from "@/utils/auth";
 import { clearBiometrics } from "@/utils/biometrics";
-export type FamilyMember = {
-  id: string;
-  relationship: string;
-  profile: PatientProfile;
-};
-type Coordinates = { latitude: number; longitude: number };
-type BookingDraft = {
-  hospitalId: string;
-  day: number;
-  time: string | null;
-  doctor: number;
-};
+import {
+  APP_STATE_KEY,
+  AppState,
+  authenticatedState,
+  bindAppointment,
+  BookingDraft,
+  Coordinates,
+  emptyAppState,
+  FamilyMember,
+  PendingTriageSession,
+  restoreAppState,
+  serializeAppState,
+  TriageAssessment,
+} from "@/utils/appState";
+export type { FamilyMember, PendingTriageSession } from "@/utils/appState";
+
+function newTriage(
+  state: AppState,
+  symptoms = state.symptoms,
+): PendingTriageSession {
+  return {
+    id: "triage-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+    createdAt: new Date().toISOString(),
+    symptoms,
+    bodyParts: [...state.bodyParts],
+    photoUri: state.photoUri,
+    assessment: null,
+  };
+}
 function useAppState() {
-  const [session, setSession] = useState<AuthSession | null>(null);
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [activePatientId, setActivePatientId] = useState<string | null>(null);
-  const [pendingDestination, setPendingDestination] = useState<Href | null>(
-    null,
-  );
-  const [bookingDraft, setBookingDraft] = useState<BookingDraft | null>(null);
-  const [symptoms, setSymptomsRaw] = useState("");
-  const [bodyParts, setBodyParts] = useState<string[]>([]);
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [location, setLocation] = useState<Coordinates | null>(null);
-  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(
-    null,
-  );
-  const [appointment, setAppointment] = useState<Appointment | null>(null);
-  const [cancellations, setCancellations] = useState({ day: "", count: 0 });
+  const [state, setState] = useState<AppState>(emptyAppState);
+  const [hydrated, setHydrated] = useState(false);
   const [storageError, setStorageError] = useState("");
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const persistenceEnabled = useRef(true);
+  const paused = useRef(false);
   useEffect(() => {
-    AsyncStorage.multiRemove([
-      "medtriage:patient-profile",
-      "medtriage:demo-appointment",
-      "medtriage:demo-cancellations",
-    ]).catch(() =>
-      setStorageError("ล้างข้อมูลเดโมรุ่นเก่าไม่สำเร็จ โปรดล้างข้อมูลเว็บไซต์"),
-    );
+    let active = true;
+    AsyncStorage.getItem(APP_STATE_KEY)
+      .then((raw) => {
+        if (active && raw) setState(restoreAppState(raw, isDemoAuth));
+      })
+      .catch(() => {
+        persistenceEnabled.current = false;
+        if (active)
+          setStorageError(
+            "อ่านข้อมูลเดิมไม่ได้ ระบบยังใช้งานได้ แต่จะไม่เขียนทับข้อมูลเดิม โปรดล้างข้อมูลเดโมหากต้องการเริ่มใหม่",
+          );
+      })
+      .finally(() => {
+        if (active) setHydrated(true);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
+  useEffect(() => {
+    if (!hydrated || paused.current || !persistenceEnabled.current) return;
+    const serialized = serializeAppState(state, isDemoAuth);
+    queue.current = queue.current
+      .catch(() => undefined)
+      .then(() => AsyncStorage.setItem(APP_STATE_KEY, serialized))
+      .catch(() =>
+        setStorageError(
+          "บันทึกข้อมูลในอุปกรณ์ไม่สำเร็จ ข้อมูลล่าสุดอาจไม่อยู่หลังรีโหลด",
+        ),
+      );
+  }, [state, hydrated]);
+  const session = state.session;
+  const familyMembers =
+    session && state.ownerId === session.userId ? state.familyMembers : [];
   const activePatient =
-    familyMembers.find((member) => member.id === activePatientId) ?? null;
-  const authStatus = session ? ("logged-in" as const) : ("guest" as const);
-  const setSymptoms = (value: string) =>
-    setSymptomsRaw(
-      value
-        .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
-        .slice(0, 4000),
-    );
-  const toggleBodyPart = (value: string) =>
-    setBodyParts((parts) =>
-      parts.includes(value)
-        ? parts.filter((p) => p !== value)
-        : [...parts, value],
-    );
-  const authenticate = (next: AuthSession) => {
+    familyMembers.find((member) => member.id === state.activePatientId) ?? null;
+  const selectedHospital =
+    hospitals.find((h) => h.id === state.selectedHospitalId) ?? null;
+  const patch = useCallback(
+    (value: Partial<AppState>) =>
+      setState((current) => ({ ...current, ...value })),
+    [],
+  );
+  const setSymptoms = useCallback(
+    (value: string) =>
+      patch({
+        symptoms: value
+          .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
+          .slice(0, 4000),
+      }),
+    [patch],
+  );
+  const toggleBodyPart = useCallback(
+    (value: string) =>
+      setState((current) => ({
+        ...current,
+        bodyParts: current.bodyParts.includes(value)
+          ? current.bodyParts.filter((p) => p !== value)
+          : [...current.bodyParts, value],
+      })),
+    [],
+  );
+  const setPhotoUri = useCallback(
+    (value: string | null) => patch({ photoUri: value }),
+    [patch],
+  );
+  const setLocation = useCallback(
+    (value: Coordinates | null) => patch({ location: value }),
+    [patch],
+  );
+  const setSelectedHospital = useCallback(
+    (value: Hospital | null) =>
+      patch({ selectedHospitalId: value?.id ?? null }),
+    [patch],
+  );
+  const setBookingDraft = useCallback(
+    (value: BookingDraft | null) => patch({ bookingDraft: value }),
+    [patch],
+  );
+  const beginTriageSession = useCallback(
+    (symptoms?: string) =>
+      setState((current) => ({
+        ...current,
+        symptoms: symptoms ?? current.symptoms,
+        pendingTriageSession: newTriage(current, symptoms ?? current.symptoms),
+      })),
+    [],
+  );
+  const recordTriageAssessment = useCallback(
+    (assessment: TriageAssessment) =>
+      setState((current) => ({
+        ...current,
+        pendingTriageSession: {
+          ...(current.pendingTriageSession ?? newTriage(current)),
+          assessment,
+        },
+      })),
+    [],
+  );
+  const authenticate = useCallback((next: AuthSession) => {
     if (!next.userId || !next.identifier)
       throw new Error("ข้อมูลบัญชีจากระบบไม่ถูกต้อง");
-    if (session && session.userId !== next.userId) setAppointment(null);
-    setSession(next);
-    setFamilyMembers((current) =>
-      current.some((p) => p.id === next.userId)
-        ? current
-        : [
-            {
-              id: next.userId,
-              relationship: "ตนเอง",
-              profile: {
-                ...emptyPatientProfile,
-                firstName: next.displayName,
-                fullName: next.displayName,
-                phone: next.identifier.startsWith("+66")
-                  ? "0" + next.identifier.slice(3)
-                  : "",
-              },
-            },
-          ],
-    );
-    setActivePatientId(next.userId);
-  };
+    setState((current) => authenticatedState(current, next));
+  }, []);
   const requestAuth = (destination: Href) => {
-    setPendingDestination(destination);
+    setState((current) => ({
+      ...current,
+      pendingDestination: destination,
+      pendingTriageSession: current.pendingTriageSession ?? newTriage(current),
+    }));
     router.push("/login");
   };
   const requestProfile = (destination: Href) => {
-    setPendingDestination(destination);
+    patch({ pendingDestination: destination });
     router.push("/profile-setup");
   };
   const resumeAfterAuth = () => {
-    const destination = pendingDestination ?? "/(tabs)";
-    setPendingDestination(null);
+    const destination = state.pendingDestination ?? "/(tabs)";
+    patch({ pendingDestination: null });
     router.replace(destination);
   };
+  const skipProfileSetup = () => router.replace("/(tabs)");
   const selectPatient = (id: string) => {
-    if (familyMembers.some((p) => p.id === id)) setActivePatientId(id);
+    if (familyMembers.some((p) => p.id === id)) patch({ activePatientId: id });
   };
   const addFamilyMember = (
     name: string,
@@ -118,96 +198,115 @@ function useAppState() {
       throw new Error("กรอกชื่อ ความสัมพันธ์ และยืนยันสิทธิ์ในการดูแล");
     if (familyMembers.length >= 8)
       throw new Error("เพิ่มสมาชิกได้ไม่เกิน 8 คนในเดโม");
-    const member = {
-      id: "family-" + Date.now(),
+    const member: FamilyMember = {
+      id: "family-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
       relationship,
-      profile: { ...emptyPatientProfile, firstName: name, fullName: name },
+      profile: normalizePatientProfile({
+        ...emptyPatientProfile,
+        fullName: name,
+      }),
     };
-    setFamilyMembers((current) => [...current, member]);
-    setActivePatientId(member.id);
+    setState((current) => ({
+      ...current,
+      familyMembers: [...current.familyMembers, member],
+      activePatientId: member.id,
+    }));
   };
   const savePatientProfile = async (profile: PatientProfile) => {
-    if (!session || !activePatientId)
+    if (!session || !activePatient)
       throw new Error("เข้าสู่ระบบและเลือกผู้ป่วยก่อนบันทึก");
-    setFamilyMembers((current) =>
-      current.map((member) =>
-        member.id === activePatientId ? { ...member, profile } : member,
+    const id = activePatient.id;
+    const normalized = normalizePatientProfile({
+      ...profile,
+      fullName: formatPatientName(profile),
+    });
+    setState((current) => ({
+      ...current,
+      familyMembers: current.familyMembers.map((member) =>
+        member.id === id ? { ...member, profile: normalized } : member,
       ),
-    );
+    }));
   };
   const saveAppointment = async (value: Appointment) => {
-    if (!session || !activePatient)
-      throw new Error("เข้าสู่ระบบก่อนยืนยันนัดหมาย");
-    if (
-      !activePatient.profile.fullName ||
-      !/^0\d{9}$/.test(activePatient.profile.phone.replace(/\D/g, ""))
-    )
-      throw new Error("กรอกชื่อและเบอร์โทรผู้ป่วยให้ครบก่อนจอง");
-    setAppointment({
-      ...value,
-      patientId: activePatient.id,
-      patientName: activePatient.profile.fullName,
-      caregiverId: session.userId,
-    });
-    setBookingDraft(null);
+    const bound = bindAppointment(
+      value,
+      session,
+      activePatient,
+      state.pendingTriageSession,
+    );
+    patch({ appointment: bound, bookingDraft: null, pendingDestination: null });
   };
   const updateAppointmentRating = async (rating: number) => {
-    if (appointment) setAppointment({ ...appointment, rating });
+    if (state.appointment)
+      patch({ appointment: { ...state.appointment, rating } });
   };
   const cancelAppointment = async () => {
     const today = new Date().toLocaleDateString("en-CA", {
       timeZone: "Asia/Bangkok",
     });
-    const count = cancellations.day === today ? cancellations.count : 0;
+    const count =
+      state.cancellations.day === today ? state.cancellations.count : 0;
     if (count >= 2) throw new Error("LIMIT");
-    setCancellations({ day: today, count: count + 1 });
-    setAppointment(null);
+    patch({
+      cancellations: { day: today, count: count + 1 },
+      appointment: null,
+    });
     return 1 - count;
   };
   const logout = async () => {
-    if (session) await revokeSession(session);
-    await clearBiometrics();
-    setSession(null);
-    setFamilyMembers([]);
-    setActivePatientId(null);
-    setPendingDestination(null);
-    setBookingDraft(null);
-    setSymptoms("");
-    setBodyParts([]);
-    setPhotoUri(null);
-    setLocation(null);
-    setSelectedHospital(null);
-    setAppointment(null);
-    setCancellations({ day: "", count: 0 });
+    paused.current = true;
+    try {
+      if (session) {
+        try {
+          await revokeSession(session);
+        } catch {
+          /* Local sign-out must still work offline. */
+        }
+      }
+      await clearBiometrics();
+      await queue.current;
+      await AsyncStorage.removeItem(APP_STATE_KEY);
+      setState(emptyAppState());
+      setStorageError("");
+      persistenceEnabled.current = true;
+    } finally {
+      paused.current = false;
+    }
   };
   return {
     session,
-    authStatus,
+    authStatus: session ? ("logged-in" as const) : ("guest" as const),
     familyMembers,
     activePatient,
-    activePatientId,
+    activePatientId: activePatient?.id ?? null,
     authenticate,
     requestAuth,
     requestProfile,
     resumeAfterAuth,
+    skipProfileSetup,
     selectPatient,
     addFamilyMember,
     savePatientProfile,
-    bookingDraft,
+    bookingDraft: state.bookingDraft,
     setBookingDraft,
     storageError,
-    symptoms,
+    hydrated,
+    pendingDestination: state.pendingDestination,
+    pendingTriageSession: state.pendingTriageSession,
+    beginTriageSession,
+    recordTriageAssessment,
+    symptoms: state.symptoms,
     setSymptoms,
-    bodyParts,
+    bodyParts: state.bodyParts,
     toggleBodyPart,
-    photoUri,
+    photoUri: state.photoUri,
     setPhotoUri,
-    location,
+    location: state.location,
     setLocation,
     selectedHospital,
     setSelectedHospital,
-    appointment,
-    appointmentLoading: false,
+    appointment: session ? state.appointment : null,
+    appointmentLoading: !hydrated,
     saveAppointment,
     updateAppointmentRating,
     cancelAppointment,
@@ -221,7 +320,15 @@ export function MedtriageProvider({ children }: { children: ReactNode }) {
   const value = useAppState();
   return (
     <MedtriageContext.Provider value={value}>
-      {children}
+      {value.hydrated ? (
+        children
+      ) : (
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <Text>กำลังโหลดข้อมูลเดโม…</Text>
+        </View>
+      )}
     </MedtriageContext.Provider>
   );
 }

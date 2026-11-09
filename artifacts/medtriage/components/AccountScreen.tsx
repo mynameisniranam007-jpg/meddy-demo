@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { router } from "expo-router";
-import { Text } from "react-native";
+import { Alert, Text } from "react-native";
 import {
   Screen,
   SurfaceCard,
@@ -56,7 +56,7 @@ export default function AccountScreen({
       <SurfaceCard style={{ gap: 18 }}>
         {isDemoAuth ? (
           <BodyText>
-            บัญชีทดลองในเซสชันนี้เท่านั้น บัญชีหายเมื่อรีโหลดเว็บ
+            บัญชีทดลองบันทึกในอุปกรณ์นี้และใช้ต่อหลังรีโหลดได้
             กรุณาใช้ข้อมูลและรหัสผ่านสมมติ
           </BodyText>
         ) : null}
@@ -116,6 +116,27 @@ export default function AccountScreen({
             />
           </>
         ) : null}
+      </SurfaceCard>
+      <SurfaceCard style={{ gap: 12 }}>
+        <BodyText>ตัวเลือกยืนยันตัวตนภายนอก</BodyText>
+        <SecondaryButton
+          title="ThaID · ยังไม่เชื่อมต่อ"
+          onPress={() =>
+            Alert.alert(
+              "ThaID",
+              "ต้นแบบนี้ยังไม่เชื่อมต่อบริการยืนยันตัวตนจริง",
+            )
+          }
+        />
+        <SecondaryButton
+          title="หมอพร้อม · ยังไม่เชื่อมต่อ"
+          onPress={() =>
+            Alert.alert(
+              "หมอพร้อม",
+              "ต้นแบบนี้ยังไม่เชื่อมต่อบริการยืนยันตัวตนจริง",
+            )
+          }
+        />
       </SurfaceCard>
       <SecondaryButton
         title={

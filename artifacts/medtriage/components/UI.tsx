@@ -1,39 +1,45 @@
-import React, { ReactNode, useRef } from 'react';
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
+import React, { ReactNode, useRef } from "react";
 import {
   ActivityIndicator,
   Animated,
   Platform,
   Pressable,
-  ScrollView,
   StyleProp,
   StyleSheet,
   Text,
   TextStyle,
   View,
   ViewStyle,
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { useColors } from '@/hooks/useColors';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useColors } from "@/hooks/useColors";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type IconName = React.ComponentProps<typeof Feather>['name'];
+type IconName = React.ComponentProps<typeof Feather>["name"];
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function Screen({
   children,
   contentStyle,
   scroll = true,
-  keyboardTaps = 'handled',
+  keyboardTaps = "handled",
 }: {
   children: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   scroll?: boolean;
-  keyboardTaps?: 'always' | 'never' | 'handled';
+  keyboardTaps?: "always" | "never" | "handled";
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const paddingTop = Platform.OS === 'web' ? 16 : insets.top + 4;
-  const paddingBottom = !scroll ? (Platform.OS === 'web' ? 16 : insets.bottom + 12) : Platform.OS === 'web' ? 112 : insets.bottom + 86;
+  const paddingTop = Platform.OS === "web" ? 16 : insets.top + 4;
+  const paddingBottom = !scroll
+    ? Platform.OS === "web"
+      ? 16
+      : insets.bottom + 12
+    : Platform.OS === "web"
+      ? 112
+      : insets.bottom + 86;
   const containerStyle = [
     styles.pageContent,
     { paddingTop, paddingBottom },
@@ -48,14 +54,14 @@ export function Screen({
     );
   }
   return (
-    <ScrollView
+    <KeyboardAwareScrollViewCompat
       style={[styles.page, { backgroundColor: colors.background }]}
       contentContainerStyle={containerStyle}
       keyboardShouldPersistTaps={keyboardTaps}
       showsVerticalScrollIndicator={false}
     >
       {children}
-    </ScrollView>
+    </KeyboardAwareScrollViewCompat>
   );
 }
 
@@ -101,7 +107,9 @@ export function SectionTitle({
           {title}
         </Text>
         {detail ? (
-          <Text style={[styles.sectionDetail, { color: colors.mutedForeground }]}>
+          <Text
+            style={[styles.sectionDetail, { color: colors.mutedForeground }]}
+          >
             {detail}
           </Text>
         ) : null}
@@ -139,7 +147,13 @@ export function PrimaryButton({
 }) {
   const colors = useColors();
   const scale = useRef(new Animated.Value(1)).current;
-  const animateScale = (toValue: number) => Animated.spring(scale, { toValue, useNativeDriver: true, speed: 32, bounciness: 7 }).start();
+  const animateScale = (toValue: number) =>
+    Animated.spring(scale, {
+      toValue,
+      useNativeDriver: true,
+      speed: 32,
+      bounciness: 7,
+    }).start();
   return (
     <AnimatedPressable
       accessibilityRole="button"
@@ -169,13 +183,19 @@ export function PrimaryButton({
             <Feather
               name={icon}
               size={18}
-              color={disabled ? colors.mutedForeground : colors.primaryForeground}
+              color={
+                disabled ? colors.mutedForeground : colors.primaryForeground
+              }
             />
           ) : null}
           <Text
             style={[
               styles.primaryButtonText,
-              { color: disabled ? colors.mutedForeground : colors.primaryForeground },
+              {
+                color: disabled
+                  ? colors.mutedForeground
+                  : colors.primaryForeground,
+              },
             ]}
           >
             {title}
@@ -203,13 +223,19 @@ export function SecondaryButton({
 }) {
   const colors = useColors();
   const scale = useRef(new Animated.Value(1)).current;
-  const animateScale = (toValue: number) => Animated.spring(scale, { toValue, useNativeDriver: true, speed: 32, bounciness: 7 }).start();
+  const animateScale = (toValue: number) =>
+    Animated.spring(scale, {
+      toValue,
+      useNativeDriver: true,
+      speed: 32,
+      bounciness: 7,
+    }).start();
   return (
     <AnimatedPressable
       accessibilityRole="button"
       testID={testID}
       disabled={disabled}
-      accessibilityState={{disabled}}
+      accessibilityState={{ disabled }}
       onPress={onPress}
       onPressIn={() => animateScale(0.975)}
       onPressOut={() => animateScale(1)}
@@ -222,12 +248,19 @@ export function SecondaryButton({
           borderRadius: colors.radius,
         },
         { transform: [{ scale }] },
-        {opacity: disabled ? 0.5 : 1},
+        { opacity: disabled ? 0.5 : 1 },
         style,
       ]}
     >
-      {icon ? <Feather name={icon} size={17} color={colors.secondaryForeground} /> : null}
-      <Text style={[styles.secondaryButtonText, { color: colors.secondaryForeground }]}>
+      {icon ? (
+        <Feather name={icon} size={17} color={colors.secondaryForeground} />
+      ) : null}
+      <Text
+        style={[
+          styles.secondaryButtonText,
+          { color: colors.secondaryForeground },
+        ]}
+      >
         {title}
       </Text>
     </AnimatedPressable>
@@ -247,7 +280,13 @@ export function IconButton({
 }) {
   const colors = useColors();
   const scale = useRef(new Animated.Value(1)).current;
-  const animateScale = (toValue: number) => Animated.spring(scale, { toValue, useNativeDriver: true, speed: 32, bounciness: 7 }).start();
+  const animateScale = (toValue: number) =>
+    Animated.spring(scale, {
+      toValue,
+      useNativeDriver: true,
+      speed: 32,
+      bounciness: 7,
+    }).start();
   return (
     <AnimatedPressable
       accessibilityRole="button"
@@ -256,7 +295,11 @@ export function IconButton({
       onPressIn={() => animateScale(0.9)}
       onPressOut={() => animateScale(1)}
       hitSlop={8}
-      style={({ pressed }) => [styles.iconButton, { opacity: pressed ? 0.75 : 1 }, { transform: [{ scale }] }]}
+      style={({ pressed }) => [
+        styles.iconButton,
+        { opacity: pressed ? 0.75 : 1 },
+        { transform: [{ scale }] },
+      ]}
     >
       <Feather name={icon} size={21} color={color ?? colors.foreground} />
     </AnimatedPressable>
@@ -265,21 +308,26 @@ export function IconButton({
 
 export function Pill({
   children,
-  tone = 'teal',
+  tone = "teal",
 }: {
   children: ReactNode;
-  tone?: 'teal' | 'blue' | 'amber' | 'neutral';
+  tone?: "teal" | "blue" | "amber" | "neutral";
 }) {
   const colors = useColors();
   const toneStyle = {
     teal: { backgroundColor: colors.accent, color: colors.accentForeground },
-    blue: { backgroundColor: colors.secondary, color: colors.secondaryForeground },
-    amber: { backgroundColor: '#FFF4DE', color: '#8C5D00' },
+    blue: {
+      backgroundColor: colors.secondary,
+      color: colors.secondaryForeground,
+    },
+    amber: { backgroundColor: "#FFF4DE", color: "#8C5D00" },
     neutral: { backgroundColor: colors.muted, color: colors.mutedForeground },
   }[tone];
   return (
     <View style={[styles.pill, { backgroundColor: toneStyle.backgroundColor }]}>
-      <Text style={[styles.pillText, { color: toneStyle.color }]}>{children}</Text>
+      <Text style={[styles.pillText, { color: toneStyle.color }]}>
+        {children}
+      </Text>
     </View>
   );
 }
@@ -314,67 +362,67 @@ const styles = StyleSheet.create({
     gap: 18,
     flexGrow: 1,
     maxWidth: 680,
-    width: '100%',
-    alignSelf: 'center',
+    width: "100%",
+    alignSelf: "center",
   },
   card: {
     borderWidth: 1,
     padding: 18,
     gap: 12,
-    shadowColor: '#0D2C54',
+    shadowColor: "#0D2C54",
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.04,
     shadowRadius: 14,
     elevation: 2,
   },
   sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 12,
   },
   sectionTitleCopy: { flex: 1, gap: 3 },
-  sectionTitle: { fontSize: 19, fontWeight: '700', lineHeight: 27 },
+  sectionTitle: { fontSize: 19, fontWeight: "700", lineHeight: 27 },
   sectionDetail: { fontSize: 13, lineHeight: 20 },
   eyebrow: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   primaryButton: {
     minHeight: 56,
     paddingHorizontal: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 9,
   },
-  primaryButtonText: { fontSize: 15, fontWeight: '700', textAlign: 'center' },
+  primaryButtonText: { fontSize: 15, fontWeight: "700", textAlign: "center" },
   secondaryButton: {
     minHeight: 50,
     paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     borderWidth: 1.5,
   },
-  secondaryButtonText: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
+  secondaryButtonText: { fontSize: 14, fontWeight: "700", textAlign: "center" },
   iconButton: {
     minWidth: 44,
     minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   pill: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     minHeight: 25,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
-  pillText: { fontSize: 11, fontWeight: '700' },
+  pillText: { fontSize: 11, fontWeight: "700" },
   bodyText: { fontSize: 14, lineHeight: 22 },
 });

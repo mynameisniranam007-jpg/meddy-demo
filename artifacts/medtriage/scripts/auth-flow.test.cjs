@@ -1,41 +1,33 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
 const path = require("node:path");
-const ts = require("typescript");
+const { sourceLoader, memoryStorage } = require("./load-source.cjs");
+const root = path.join(__dirname, "..");
 
-test("demo authentication, input normalization and recovery lifecycle", async () => {
+test("password recovery updates durable local verifier, surviving a new service instance", async () => {
   delete process.env.EXPO_PUBLIC_AUTH_API_URL;
-  const source = fs.readFileSync(
-    path.join(__dirname, "../utils/auth.ts"),
-    "utf8",
-  );
-  const js = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-    },
-  }).outputText;
-  const auth = await import(
-    "data:text/javascript;base64," + Buffer.from(js).toString("base64")
-  );
+  const storage = memoryStorage();
+  const auth = sourceLoader(storage)(path.join(root, "utils/auth.ts"));
   assert.equal(
-    auth.normalizeIdentifier("  DEMO@example.com "),
+    auth.normalizeIdentifier(" DEMO@example.com "),
     "demo@example.com",
   );
   assert.equal(auth.normalizeIdentifier("080-111-2222"), "+66801112222");
-  assert.throws(() => auth.normalizeIdentifier("123"), /เบอร์โทร/);
-  assert.throws(() => auth.validatePassword("short"), /8/);
-  await auth.registerAccount(
+  assert.throws(() => auth.normalizeIdentifier("123"));
+  assert.throws(() => auth.validatePassword("short"));
+  const registered = await auth.registerAccount(
     "demo@example.com",
-    "demo-pass-1",
-    "ผู้ดูแลตัวอย่าง",
+    "original-pass",
+    "สมชาย ใจดี",
   );
+  await assert.rejects(
+    auth.registerAccount("demo@example.com", "original-pass", "ซ้ำ"),
+  );
+  const afterRefresh = sourceLoader(storage)(path.join(root, "utils/auth.ts"));
   assert.equal(
-    (await auth.signIn("DEMO@example.com", "demo-pass-1")).displayName,
-    "ผู้ดูแลตัวอย่าง",
+    (await afterRefresh.signIn("DEMO@example.com", "original-pass")).userId,
+    registered.userId,
   );
-  await assert.rejects(auth.signIn("demo@example.com", "wrong"));
   let now = Date.now();
   const originalNow = Date.now;
   Date.now = () => now;
@@ -48,27 +40,36 @@ test("demo authentication, input normalization and recovery lifecycle", async ()
       await assert.rejects(auth.verifyOtp(challenge.challengeId, wrong));
     await assert.rejects(
       auth.verifyOtp(challenge.challengeId, challenge.demoOtp),
-      /หมดอายุ/,
     );
     now += 31000;
     challenge = await auth.requestOtp("demo@example.com");
     now += 300001;
     await assert.rejects(
       auth.verifyOtp(challenge.challengeId, challenge.demoOtp),
-      /หมดอายุ/,
     );
     challenge = await auth.requestOtp("demo@example.com");
     const { resetToken } = await auth.verifyOtp(
       challenge.challengeId,
       challenge.demoOtp,
     );
-    await auth.resetPassword(resetToken, "demo-pass-2");
-    await assert.rejects(
-      auth.resetPassword(resetToken, "another-pass"),
-      /หมดเวลา/,
+    await auth.resetPassword(resetToken, "replacement-pass");
+    await assert.rejects(auth.resetPassword(resetToken, "another-pass"));
+    const afterSecondRefresh = sourceLoader(storage)(
+      path.join(root, "utils/auth.ts"),
     );
-    await assert.rejects(auth.signIn("demo@example.com", "demo-pass-1"));
-    assert.ok(await auth.signIn("demo@example.com", "demo-pass-2"));
+    await assert.rejects(
+      afterSecondRefresh.signIn("demo@example.com", "original-pass"),
+    );
+    assert.equal(
+      (await afterSecondRefresh.signIn("demo@example.com", "replacement-pass"))
+        .userId,
+      registered.userId,
+    );
+    const raw = [...storage.values.values()].join("");
+    assert.ok(
+      !raw.includes("original-pass") && !raw.includes("replacement-pass"),
+    );
+    assert.ok(raw.includes('"iterations":100000'));
     now += 31000;
     challenge = await auth.requestOtp("missing@example.com");
     const unknown = await auth.verifyOtp(
@@ -76,11 +77,20 @@ test("demo authentication, input normalization and recovery lifecycle", async ()
       challenge.demoOtp,
     );
     await assert.rejects(
-      auth.resetPassword(unknown.resetToken, "demo-pass-3"),
-      /ไม่มีบัญชีทดลอง/,
+      auth.resetPassword(unknown.resetToken, "replacement-pass"),
     );
     auth.cancelRecovery();
   } finally {
     Date.now = originalNow;
   }
+});
+
+test("corrupt local account data produces a handled error instead of TypeError", async () => {
+  const storage = memoryStorage();
+  storage.values.set("medtriage:demo-accounts:v1", "null");
+  const auth = sourceLoader(storage)(path.join(root, "utils/auth.ts"));
+  await assert.rejects(
+    auth.signIn("demo@example.com", "password-1"),
+    (error) => !(error instanceof TypeError),
+  );
 });

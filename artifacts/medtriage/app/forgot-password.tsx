@@ -62,6 +62,8 @@ export default function ForgotPasswordScreen() {
         setConfirm("");
         setToken("");
         setStep("done");
+        setIdentifier("");
+        setChallengeId("");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "ทำรายการไม่ได้ กรุณาลองใหม่");
@@ -85,8 +87,8 @@ export default function ForgotPasswordScreen() {
       <SurfaceCard style={{ gap: 18 }}>
         {isDemoAuth ? (
           <BodyText>
-            เดโมไม่ส่ง SMS/อีเมลจริง ใช้บัญชีที่สมัครในเซสชันนี้ รหัสทดลองมีอายุ
-            5 นาที กรอกผิดได้ไม่เกิน 5 ครั้ง
+            เดโมไม่ส่ง SMS/อีเมลจริง ใช้บัญชีทดลองที่บันทึกในอุปกรณ์นี้
+            รหัสทดลองมีอายุ 5 นาที กรอกผิดได้ไม่เกิน 5 ครั้ง
           </BodyText>
         ) : null}
         {step === "request" ? (
@@ -163,7 +165,7 @@ export default function ForgotPasswordScreen() {
           />
         ) : (
           <PrimaryButton
-            title="เข้าสู่ระบบด้วยรหัสผ่านใหม่"
+            title="บันทึกแล้ว · เข้าสู่ระบบด้วยรหัสผ่านใหม่"
             onPress={() => router.replace("/login")}
           />
         )}

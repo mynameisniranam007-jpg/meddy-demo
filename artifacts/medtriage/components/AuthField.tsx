@@ -1,3 +1,4 @@
+import { KeyboardAwareForm } from "@/components/KeyboardAwareScrollViewCompat";
 import React, { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useColors } from "@/hooks/useColors";
@@ -19,7 +20,7 @@ export function AuthField({
   const colors = useColors();
   const [visible, setVisible] = useState(false);
   return (
-    <View style={{ gap: 8 }}>
+    <KeyboardAwareForm style={{ gap: 8 }}>
       <Text
         style={{ color: colors.foreground, fontSize: 15, fontWeight: "700" }}
       >
@@ -66,6 +67,6 @@ export function AuthField({
           </Pressable>
         ) : null}
       </View>
-    </View>
+    </KeyboardAwareForm>
   );
 }
