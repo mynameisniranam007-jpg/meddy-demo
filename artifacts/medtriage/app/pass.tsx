@@ -134,7 +134,7 @@ export default function PassScreen() {
         <View style={styles.historyLine}>
           <View style={[styles.historyBullet, { backgroundColor: colors.accentForeground }]} />
           <Text style={[styles.historyText, { color: colors.foreground }]}>
-            ข้อมูลส่วนตัวเบื้องต้น: บัญชีตัวอย่าง คุณสมชาย
+            ผู้ป่วย: {appointment.patientName || "ข้อมูลตัวอย่าง"}
           </Text>
         </View>
         <View style={styles.historyLine}>

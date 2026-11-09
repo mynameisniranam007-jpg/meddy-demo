@@ -25,11 +25,11 @@ import { PatientProfile, PROFILE_STORAGE_KEY } from '@/constants/profile';
 
 export default function HomeScreen() {
   const colors = useColors();
-  const { appointment } = useMedtriage();
+  const { appointment, activePatient } = useMedtriage();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationsRead, setNotificationsRead] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [patientName, setPatientName] = useState('คุณ');
+  const patientName = activePatient?.profile.firstName || activePatient?.profile.fullName || 'ผู้ใช้ทั่วไป';
   const weekday = new Intl.DateTimeFormat('th-TH', {
     weekday: 'long',
   }).format(new Date());
@@ -42,21 +42,6 @@ export default function HomeScreen() {
     return () => clearTimeout(timer);
   }, [appointment?.reference]);
 
-  useEffect(() => {
-    let active = true;
-    AsyncStorage.getItem(PROFILE_STORAGE_KEY)
-      .then((value) => {
-        if (!active || !value) return;
-        const profile = JSON.parse(value) as Partial<PatientProfile>;
-        if (profile.fullName?.trim()) setPatientName(profile.fullName.trim().split(/\s+/)[0].slice(0, 20));
-      })
-      .catch(() => {
-        if (active) setPatientName('คุณ');
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const goToTriage = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

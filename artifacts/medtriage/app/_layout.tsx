@@ -32,6 +32,7 @@ function RootLayoutNav() {
         <Stack.Screen name="register" />
         <Stack.Screen name="recommended-hospitals" />
         <Stack.Screen name="login" />
+        <Stack.Screen name="forgot-password" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="triage" />
         <Stack.Screen name="results" />

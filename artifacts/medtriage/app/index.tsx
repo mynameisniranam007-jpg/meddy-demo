@@ -17,8 +17,7 @@ export default function WelcomeScreen() {
   const startGuestDemo = async () => {
     setStartingGuest(true);
     try {
-      await AsyncStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(demoGuestProfile));
-      router.replace('/(tabs)');
+      router.push('/triage');
     } catch {
       Alert.alert('เปิดโหมดทดลองไม่ได้', 'โปรดลองอีกครั้ง');
       setStartingGuest(false);
@@ -39,11 +38,11 @@ export default function WelcomeScreen() {
       </LinearGradient>
       <View style={styles.copy}>
         <Text style={[styles.title, { color: colors.foreground }]}>ยินดีต้อนรับสู่ Medtriage</Text>
-        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>เลือกเข้าสู่ระบบหรือสร้างบัญชีใหม่</Text>
+        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>คัดกรองก่อนได้ สมัครเมื่อพร้อมจองคิว</Text>
       </View>
-      <PrimaryButton title="เข้าสู่ระบบ" icon="log-in" onPress={() => router.push('/login')} testID="open-login" />
+      <PrimaryButton title="คัดกรองอาการทันที · ไม่ต้องสมัคร" icon="activity" onPress={() => void startGuestDemo()} testID="open-anonymous-demo" />
       <SecondaryButton title="สมัครสมาชิก" icon="user-plus" onPress={() => router.push('/register')} testID="open-register" />
-      <SecondaryButton title={startingGuest ? 'กำลังเตรียมข้อมูลเดโม…' : 'ทดลองแบบไม่ระบุตัวตน'} icon="user" onPress={() => void startGuestDemo()} testID="open-anonymous-demo" />
+      <SecondaryButton title="เข้าสู่ระบบ" icon="log-in" onPress={() => router.push('/login')} testID="open-login" />
       <View style={[styles.notice, { backgroundColor: colors.secondary }]}>
         <Feather name="shield" size={16} color={colors.secondaryForeground} />
         <Text style={[styles.noticeText, { color: colors.secondaryForeground }]}>ต้นแบบนี้ยังไม่เชื่อมระบบหมอพร้อมหรือยืนยันตัวตนจริง โปรดใช้ข้อมูลสมมติ</Text>

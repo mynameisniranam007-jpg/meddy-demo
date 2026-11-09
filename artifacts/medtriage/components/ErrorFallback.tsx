@@ -69,11 +69,11 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
 
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.foreground }]}>
-          Something went wrong
+          เกิดข้อผิดพลาดชั่วคราว
         </Text>
 
         <Text style={[styles.message, { color: colors.mutedForeground }]}>
-          Please reload the app to continue.
+          กรุณาลองอีกครั้ง ข้อมูลแบบฟอร์มที่ยังไม่บันทึกอาจต้องกรอกใหม่
         </Text>
 
         <Pressable
@@ -90,7 +90,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           <Text
             style={[styles.buttonText, { color: colors.primaryForeground }]}
           >
-            Try Again
+            ลองอีกครั้ง
           </Text>
         </Pressable>
       </View>

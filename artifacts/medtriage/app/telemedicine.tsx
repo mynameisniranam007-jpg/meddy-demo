@@ -4,9 +4,12 @@ import { Feather } from '@expo/vector-icons';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { BodyText, Eyebrow, IconButton, Pill, PrimaryButton, Screen, SurfaceCard } from '@/components/UI';
 import { useColors } from '@/hooks/useColors';
+import { useMedtriage } from '@/context/MedtriageContext';
 
 export default function TelemedicineScreen() {
   const colors = useColors();
+  const { session, activePatient, requestAuth, requestProfile } = useMedtriage();
+  const chooseProvider = (type: "general" | "resident") => { if(!session){requestAuth("/telemedicine");return;} if(!activePatient?.profile.phone){requestProfile("/telemedicine");return;} setProvider(type); };
   const [provider, setProvider] = useState<'general' | 'resident' | null>(null);
   return (
     <Screen contentStyle={styles.page}>
@@ -23,8 +26,8 @@ export default function TelemedicineScreen() {
 
       <SurfaceCard style={styles.infoCard}>
         <Text style={[styles.infoTitle,{color:colors.foreground}]}>เลือกประเภทแพทย์ก่อนโทร</Text>
-        <PrimaryButton title="แพทย์ทั่วไป · ขณะนี้มีผู้ใช้จำนวนมาก อาจต้องรอสาย" icon="users" onPress={()=>setProvider('general')} />
-        <PrimaryButton title="แพทย์ประจำบ้าน · คิวตัวอย่าง" icon="user" onPress={()=>setProvider('resident')} />
+        <PrimaryButton title="แพทย์ทั่วไป · ขณะนี้มีผู้ใช้จำนวนมาก อาจต้องรอสาย" icon="users" onPress={()=>chooseProvider('general')} />
+        <PrimaryButton title="แพทย์ประจำบ้าน · คิวตัวอย่าง" icon="user" onPress={()=>chooseProvider('resident')} />
         {provider?<Text style={[styles.infoText,{color:colors.secondaryForeground}]}>เลือกแล้ว: {provider==='general'?'แพทย์ทั่วไป':'แพทย์ประจำบ้าน'} · ระบบโทรยังเป็นหน้าจอจำลอง</Text>:null}
       </SurfaceCard>
       {provider ? <>

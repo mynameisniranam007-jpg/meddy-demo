@@ -187,12 +187,14 @@ export function PrimaryButton({
 }
 
 export function SecondaryButton({
+  disabled = false,
   title,
   onPress,
   icon,
   style,
   testID,
 }: {
+  disabled?: boolean;
   title: string;
   onPress: () => void;
   icon?: IconName;
@@ -206,6 +208,8 @@ export function SecondaryButton({
     <AnimatedPressable
       accessibilityRole="button"
       testID={testID}
+      disabled={disabled}
+      accessibilityState={{disabled}}
       onPress={onPress}
       onPressIn={() => animateScale(0.975)}
       onPressOut={() => animateScale(1)}
@@ -218,6 +222,7 @@ export function SecondaryButton({
           borderRadius: colors.radius,
         },
         { transform: [{ scale }] },
+        {opacity: disabled ? 0.5 : 1},
         style,
       ]}
     >

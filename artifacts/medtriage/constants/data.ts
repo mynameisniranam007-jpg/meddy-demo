@@ -58,6 +58,9 @@ export const hospitals: Hospital[] = [
 ];
 
 export type Appointment = {
+  patientId?: string;
+  patientName?: string;
+  caregiverId?: string;
   reference: string;
   hospitalId: string;
   hospitalName: string;
