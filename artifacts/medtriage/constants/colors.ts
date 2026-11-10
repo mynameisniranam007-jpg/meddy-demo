@@ -15,19 +15,19 @@
 const colors = {
   light: {
     // Legacy aliases (kept for backward compatibility)
-    text: "#16344F",
-    tint: "#176B68",
+    text: "#214640",
+    tint: "#0D4744",
 
     // Core surfaces
     background: "#F5F8F8",
-    foreground: "#0D2C54",
+    foreground: "#163D3A",
 
     // Cards / elevated surfaces
     card: "#FFFFFF",
-    cardForeground: "#16344F",
+    cardForeground: "#214640",
 
     // Primary action color (buttons, links, active states)
-    primary: "#176B68",
+    primary: "#0D4744",
     primaryForeground: "#FFFFFF",
 
     // Secondary / less-emphasis interactive surfaces
@@ -54,22 +54,22 @@ const colors = {
   dark: {
     text: "#ECF5FA",
     tint: "#76D4C4",
-    background: "#0B1F33",
+    background: "#0D2422",
     foreground: "#ECF5FA",
-    card: "#142B40",
+    card: "#16332F",
     cardForeground: "#ECF5FA",
     primary: "#69C7BA",
-    primaryForeground: "#0D2C54",
-    secondary: "#193A4D",
+    primaryForeground: "#0D2422",
+    secondary: "#20433C",
     secondaryForeground: "#B4EAE2",
-    muted: "#1B3145",
+    muted: "#1C3833",
     mutedForeground: "#A3B4C2",
-    accent: "#193F4B",
+    accent: "#20483E",
     accentForeground: "#B4EAE2",
     destructive: "#F97066",
     destructiveForeground: "#FFFFFF",
-    border: "#2D4659",
-    input: "#345166",
+    border: "#34554A",
+    input: "#426659",
   },
   radius: 24,
 };

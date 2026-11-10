@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,6 +19,7 @@ import { isDemoAuth, registerAccount, signIn } from "@/utils/auth";
 import { biometricSession } from "@/utils/biometrics";
 import { useMedtriage } from "@/context/MedtriageContext";
 import { design } from "@/constants/design";
+import { AuthBrandPanel } from "@/components/AuthBrandPanel";
 
 export default function AccountScreen({
   register = false,
@@ -26,6 +28,8 @@ export default function AccountScreen({
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const split = width >= 960;
   const { authenticate } = useMedtriage();
   const [firstName, setFirstName] = useState("");
   const [title, setTitle] = useState("");
@@ -92,13 +96,20 @@ export default function AccountScreen({
       </Text>
     </Pressable>
   );
-  return (
+  const switchScreen = () => {
+    setPassword("");
+    setConfirm("");
+    setError("");
+    setNotice("");
+    router.replace(register ? "/login" : "/register");
+  };
+  const formPanel = (
     <KeyboardAwareScrollViewCompat
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{ flex: 1, backgroundColor: colors.card }}
       contentContainerStyle={[
         styles.page,
         {
-          paddingTop: Platform.OS === "web" ? 24 : insets.top + 16,
+          paddingTop: split ? 32 : 24,
           paddingBottom: Math.max(insets.bottom, 24) + 16,
         },
       ]}
@@ -107,15 +118,6 @@ export default function AccountScreen({
     >
       <View style={styles.shell}>
         <View style={styles.topbar}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="กลับหน้าแรก"
-            disabled={busy}
-            onPress={() => router.replace("/")}
-            style={styles.backButton}
-          >
-            <Feather name="arrow-left" size={22} color={colors.foreground} />
-          </Pressable>
           <View style={styles.brand}>
             <View
               style={[
@@ -129,7 +131,19 @@ export default function AccountScreen({
               Meddy
             </Text>
           </View>
-          <View style={styles.backButton} />
+          <Pressable
+            accessibilityRole="link"
+            disabled={busy}
+            onPress={switchScreen}
+            style={styles.headerSwitch}
+          >
+            <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>
+              {register ? "มีบัญชีแล้ว?" : "ยังไม่มีบัญชี?"}
+            </Text>
+            <Text style={[styles.linkText, { color: colors.primary }]}>
+              {register ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
+            </Text>
+          </Pressable>
         </View>
         <View style={styles.heading}>
           <Text style={[styles.eyebrow, { color: colors.secondaryForeground }]}>
@@ -307,7 +321,7 @@ export default function AccountScreen({
               style={({ pressed }) => [
                 styles.primaryButton,
                 {
-                  backgroundColor: "#176B68",
+                  backgroundColor: "#0D4744",
                   opacity: busy || pressed ? 0.8 : 1,
                   transform: [{ scale: pressed ? 0.98 : 1 }],
                 },
@@ -455,11 +469,44 @@ export default function AccountScreen({
       </View>
     </KeyboardAwareScrollViewCompat>
   );
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: "#0D4744",
+        paddingTop: Platform.OS === "web" ? 0 : insets.top,
+      }}
+    >
+      <View style={{ flex: 1, flexDirection: split ? "row" : "column" }}>
+        <AuthBrandPanel compact={!split} small={height < 820 || !split} />
+        <View
+          style={{
+            width: split ? "50%" : "100%",
+            flex: 1,
+            backgroundColor: colors.card,
+          }}
+        >
+          {formPanel}
+        </View>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  page: { flexGrow: 1, paddingHorizontal: 20, alignItems: "center" },
-  shell: { width: "100%", maxWidth: 460, gap: 26 },
+  page: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shell: { width: "100%", maxWidth: 440, gap: 28 },
+  headerSwitch: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+    minHeight: 44,
+    gap: 3,
+  },
   topbar: {
     flexDirection: "row",
     alignItems: "center",
@@ -490,8 +537,8 @@ const styles = StyleSheet.create({
   },
   subtitle: { fontSize: 15, lineHeight: 24 },
   card: {
-    padding: design.cardPadding,
-    borderWidth: 1,
+    padding: 0,
+    borderWidth: 0,
     borderRadius: design.cardRadius,
     gap: 14,
   },

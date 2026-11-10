@@ -29,15 +29,17 @@ export function AuthField({
 }) {
   const colors = useColors();
   const [visible, setVisible] = useState(false);
+  const [focused, setFocused] = useState(false);
   return (
     <KeyboardAwareForm style={styles.field}>
       <Text style={[styles.label, { color: colors.foreground }]}>{label}</Text>
       <View
+        testID="auth-field-frame"
         style={[
           styles.inputRow,
           {
-            borderColor: colors.input,
-            backgroundColor: colors.background,
+            borderColor: focused ? colors.primary : colors.input,
+            backgroundColor: focused ? colors.secondary : colors.background,
             opacity: disabled ? 0.6 : 1,
           },
         ]}
@@ -45,7 +47,7 @@ export function AuthField({
         <Feather
           name={icon ?? (password ? "lock" : numeric ? "credit-card" : "user")}
           size={20}
-          color={colors.mutedForeground}
+          color={focused ? colors.primary : colors.mutedForeground}
           style={styles.leadingIcon}
         />
         <TextInput
@@ -56,6 +58,8 @@ export function AuthField({
           autoCorrect={false}
           autoComplete={autoComplete}
           editable={!disabled}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder={placeholder ?? (password ? "กรอกรหัสผ่าน" : label)}
           placeholderTextColor={colors.mutedForeground}
           secureTextEntry={password && !visible}
