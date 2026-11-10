@@ -1,3 +1,4 @@
+import { formatNationalId } from "@/constants/profile";
 import React, { useState } from "react";
 import { router } from "expo-router";
 import { Alert, Text } from "react-native";
@@ -19,7 +20,8 @@ export default function AccountScreen({
   register?: boolean;
 }) {
   const { authenticate } = useMedtriage();
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -35,7 +37,7 @@ export default function AccountScreen({
       const session = biometric
         ? await biometricSession()
         : register
-          ? await registerAccount(identifier, password, name)
+          ? await registerAccount(identifier, password, firstName, lastName)
           : await signIn(identifier, password);
       authenticate(session);
       setPassword("");
@@ -57,21 +59,35 @@ export default function AccountScreen({
         {isDemoAuth ? (
           <BodyText>
             บัญชีทดลองบันทึกในอุปกรณ์นี้และใช้ต่อหลังรีโหลดได้
-            กรุณาใช้ข้อมูลและรหัสผ่านสมมติ
+            กรุณาใช้เลขบัตรและรหัสผ่านสมมติ เดโมตรวจเพียงรูปแบบ 13 หลัก
+            ยังไม่ยืนยันตัวตนกับภาครัฐ
+            บัญชีรุ่นอีเมล/เบอร์โทรให้สมัครใหม่ด้วยเลขบัตรสมมติ
           </BodyText>
         ) : null}
         {register ? (
-          <AuthField
-            label="ชื่อที่ใช้แสดง / ชื่อผู้ดูแล"
-            value={name}
-            onChangeText={setName}
-            maxLength={100}
-          />
+          <>
+            <AuthField
+              label="ชื่อ (First Name)"
+              value={firstName}
+              onChangeText={setFirstName}
+              maxLength={100}
+            />
+            <AuthField
+              label="นามสกุล (Last Name)"
+              value={lastName}
+              onChangeText={setLastName}
+              maxLength={100}
+            />
+          </>
         ) : null}
         <AuthField
-          label="อีเมลหรือเบอร์โทรศัพท์"
-          value={identifier}
-          onChangeText={setIdentifier}
+          label="เลขบัตรประชาชน 13 หลัก"
+          value={formatNationalId(identifier)}
+          onChangeText={(value) =>
+            setIdentifier(value.replace(/\D/g, "").slice(0, 13))
+          }
+          numeric
+          maxLength={17}
         />
         <AuthField
           label="รหัสผ่าน 8–128 ตัวอักษร"

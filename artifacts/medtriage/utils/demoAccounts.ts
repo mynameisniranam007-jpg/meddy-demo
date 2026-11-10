@@ -1,3 +1,4 @@
+import { splitPatientName } from "../constants/profile";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { pbkdf2Async } from "@noble/hashes/pbkdf2.js";
 import { sha256 } from "@noble/hashes/sha2.js";
@@ -52,16 +53,20 @@ export async function readDemoAccounts(): Promise<DemoAccount[]> {
     const data = JSON.parse(raw);
     if (data.version !== 1 || !Array.isArray(data.accounts))
       throw new Error("VERSION");
-    return data.accounts
-      .filter(isDemoAccount)
-      .map((a: DemoAccount) => ({
-        session: {
-          userId: a.session.userId,
-          identifier: a.session.identifier,
-          displayName: a.session.displayName,
-        },
-        verifier: a.verifier,
-      }));
+    return data.accounts.filter(isDemoAccount).map((a: DemoAccount) => ({
+      session: {
+        userId: a.session.userId,
+        identifier: a.session.identifier,
+        displayName: a.session.displayName,
+        firstName:
+          a.session.firstName ??
+          splitPatientName(a.session.displayName).firstName,
+        lastName:
+          a.session.lastName ??
+          splitPatientName(a.session.displayName).lastName,
+      },
+      verifier: a.verifier,
+    }));
   } catch {
     throw new Error(
       "ข้อมูลบัญชีทดลองเสียหาย กรุณาล้างข้อมูลเว็บไซต์เพื่อเริ่มใหม่",

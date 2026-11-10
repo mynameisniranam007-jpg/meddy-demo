@@ -144,6 +144,14 @@ function useAppState() {
     (symptoms?: string) =>
       setState((current) => ({
         ...current,
+        ...(!current.session
+          ? {
+              ownerId: null,
+              familyMembers: [],
+              activePatientId: null,
+              appointment: null,
+            }
+          : {}),
         symptoms: symptoms ?? current.symptoms,
         pendingTriageSession: newTriage(current, symptoms ?? current.symptoms),
       })),
@@ -334,6 +342,6 @@ export function MedtriageProvider({ children }: { children: ReactNode }) {
 }
 export function useMedtriage() {
   const context = useContext(MedtriageContext);
-  if (!context) throw new Error("MedtriageProvider is required");
+  if (!context) throw new Error("Meddy provider is required");
   return context;
 }

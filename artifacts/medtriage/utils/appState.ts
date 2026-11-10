@@ -1,3 +1,4 @@
+import { isNationalId } from "./nationalId";
 import type { Href } from "expo-router";
 import type { Appointment } from "../constants/data";
 import {
@@ -73,7 +74,7 @@ export function authenticatedState(
   current: AppState,
   next: AuthSession,
 ): AppState {
-  if (!next.userId || !next.identifier)
+  if (!next.userId || !isNationalId(next.identifier))
     throw new Error("ข้อมูลบัญชีจากระบบไม่ถูกต้อง");
   const sameOwner = current.ownerId === next.userId;
   const self: FamilyMember = {
@@ -81,9 +82,9 @@ export function authenticatedState(
     relationship: "ตนเอง",
     profile: normalizePatientProfile({
       fullName: next.displayName,
-      phone: next.identifier.startsWith("+66")
-        ? "0" + next.identifier.slice(3)
-        : "",
+      firstName: next.firstName ?? "",
+      lastName: next.lastName ?? "",
+      nationalId: isNationalId(next.identifier) ? next.identifier : "",
     }),
   };
   const members =
@@ -188,12 +189,14 @@ export function restoreAppState(
   const session =
     allowDemoSession &&
     typeof s.userId === "string" &&
-    typeof s.identifier === "string" &&
+    isNationalId(s.identifier) &&
     typeof s.displayName === "string"
       ? {
           userId: text(s.userId, 200),
           identifier: text(s.identifier, 254),
           displayName: text(s.displayName, 100),
+          firstName: text(s.firstName, 100),
+          lastName: text(s.lastName, 100),
         }
       : null;
   const seen = new Set<string>();
@@ -326,6 +329,8 @@ export function serializeAppState(
             userId: state.session.userId,
             identifier: state.session.identifier,
             displayName: state.session.displayName,
+            firstName: state.session.firstName,
+            lastName: state.session.lastName,
           }
         : null,
     photoUri: photo(state.photoUri),

@@ -1,3 +1,4 @@
+import { formatNationalId } from "@/constants/profile";
 import React, { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { Text } from "react-native";
@@ -93,15 +94,20 @@ export default function ForgotPasswordScreen() {
         ) : null}
         {step === "request" ? (
           <AuthField
-            label="อีเมลหรือเบอร์โทรที่ลงทะเบียน"
-            value={identifier}
-            onChangeText={setIdentifier}
+            label="เลขบัตรประชาชนของบัญชีที่ต้องการกู้คืน"
+            value={formatNationalId(identifier)}
+            onChangeText={(value) =>
+              setIdentifier(value.replace(/\D/g, "").slice(0, 13))
+            }
+            numeric
+            maxLength={17}
           />
         ) : null}
         {step === "otp" ? (
           <>
             <BodyText>
-              หากข้อมูลตรงกับบัญชีที่ลงทะเบียน ระบบจะส่งรหัสให้
+              หากข้อมูลตรงกับบัญชี
+              ระบบจะส่งรหัสไปยังช่องทางติดต่อที่ลงทะเบียนไว้
               โปรดตรวจสอบช่องทางที่เลือก
             </BodyText>
             {demoOtp ? (

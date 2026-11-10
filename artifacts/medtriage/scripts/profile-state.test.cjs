@@ -44,7 +44,7 @@ test("legacy names migrate without duplicating title or surname; explicit edits 
 
 const caregiver = {
   userId: "owner",
-  identifier: "demo@example.com",
+  identifier: "0000000000000",
   displayName: "ผู้ดูแล",
 };
 function patient(id, name) {
@@ -126,6 +126,19 @@ test("guest assessment, auth continuation and active family survive serializatio
   assert.equal(malformed.location, null);
   assert.equal(malformed.familyMembers[0].profile.firstName, "");
   assert.throws(() => state.restoreAppState("null", true));
+  const legacy = state.restoreAppState(
+    JSON.stringify({
+      ...state.emptyAppState(),
+      ownerId: "old",
+      session: {
+        userId: "old",
+        identifier: "old@example.com",
+        displayName: "บัญชีเก่า",
+      },
+    }),
+    true,
+  );
+  assert.equal(legacy.session, null);
   const guest = {
     ...state.emptyAppState(),
     pendingTriageSession: triage,
@@ -133,6 +146,8 @@ test("guest assessment, auth continuation and active family survive serializatio
     pendingDestination: before.pendingDestination,
   };
   const signedIn = state.authenticatedState(guest, caregiver);
+  assert.equal(signedIn.familyMembers[0].profile.nationalId, "0000000000000");
+  assert.equal(signedIn.familyMembers[0].profile.phone, "");
   assert.deepEqual(signedIn.pendingTriageSession, triage);
   assert.deepEqual(signedIn.bookingDraft, guest.bookingDraft);
   const withSelf = {
@@ -148,7 +163,7 @@ test("guest assessment, auth continuation and active family survive serializatio
   );
   const other = state.authenticatedState(withSelf, {
     userId: "another",
-    identifier: "another@example.com",
+    identifier: "2222222222222",
     displayName: "บัญชี อื่น",
   });
   assert.equal(other.pendingTriageSession, null);

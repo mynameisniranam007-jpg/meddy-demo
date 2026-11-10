@@ -1,21 +1,21 @@
-import React, { useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import React, { useEffect } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
   Inter_700Bold,
   useFonts,
-} from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { MedtriageProvider } from '@/context/MedtriageContext';
-import { ThemeProvider, useThemePreference } from '@/context/ThemeContext';
-import { StatusBar } from 'expo-status-bar';
+} from "@expo-google-fonts/inter";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { MedtriageProvider } from "@/context/MedtriageContext";
+import { ThemeProvider, useThemePreference } from "@/context/ThemeContext";
+import { StatusBar } from "expo-status-bar";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -26,11 +26,14 @@ function RootLayoutNav() {
   const { colorScheme } = useThemePreference();
   return (
     <>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, animation: 'ios_from_right' }}>
+      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+      <Stack
+        screenOptions={{ headerShown: false, animation: "ios_from_right" }}
+      >
         <Stack.Screen name="index" />
         <Stack.Screen name="register" />
         <Stack.Screen name="recommended-hospitals" />
+        <Stack.Screen name="emergency-transit" />
         <Stack.Screen name="login" />
         <Stack.Screen name="forgot-password" />
         <Stack.Screen name="(tabs)" />

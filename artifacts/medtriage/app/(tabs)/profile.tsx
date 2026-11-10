@@ -204,11 +204,11 @@ export default function ProfileScreen() {
         />
         <ProfileRow
           icon="help-circle"
-          title="เกี่ยวกับ Medtriage"
+          title="เกี่ยวกับ Meddy"
           detail="แอปต้นแบบสำหรับการประเมินเบื้องต้น"
           onPress={() =>
             Alert.alert(
-              "เกี่ยวกับ Medtriage",
+              "เกี่ยวกับ Meddy",
               "ตัวอย่าง UX สำหรับการดูแลสุขภาพ ไม่ใช่บริการทางการแพทย์จริง",
             )
           }

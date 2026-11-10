@@ -26,7 +26,7 @@ export async function enableBiometrics(session: AuthSession) {
 export async function biometricSession(): Promise<AuthSession> {
   const token = await SecureStore.getItemAsync(KEY, {
     requireAuthentication: true,
-    authenticationPrompt: "เข้าสู่ระบบ MedTriage",
+    authenticationPrompt: "เข้าสู่ระบบ Meddy",
   });
   if (!token)
     throw new Error("กรุณาเข้าสู่ระบบด้วยรหัสผ่านและเปิด biometrics ก่อน");

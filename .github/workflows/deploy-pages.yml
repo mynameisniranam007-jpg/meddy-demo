@@ -1,4 +1,4 @@
-name: Build and deploy Medtriage demo
+name: Build and deploy Meddy demo
 
 on:
   push:

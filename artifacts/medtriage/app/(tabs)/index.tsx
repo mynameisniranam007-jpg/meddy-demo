@@ -85,7 +85,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.brandCopy}>
             <Text style={[styles.brandName, { color: colors.foreground }]}>
-              medtriage
+              Meddy
             </Text>
             <Text style={[styles.brandSub, { color: colors.mutedForeground }]}>
               ดูแลสุขภาพอย่างเข้าใจ
@@ -324,7 +324,7 @@ export default function HomeScreen() {
       <View style={[styles.disclaimer, { borderColor: colors.border }]}>
         <Feather name="shield" size={15} color={colors.mutedForeground} />
         <BodyText style={styles.disclaimerText}>
-          Medtriage เวอร์ชันทดลอง — ไม่ใช่บริการวินิจฉัยหรือให้การรักษา
+          Meddy เวอร์ชันทดลอง — ไม่ใช่บริการวินิจฉัยหรือให้การรักษา
         </BodyText>
       </View>
 

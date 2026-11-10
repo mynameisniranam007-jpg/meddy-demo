@@ -8,7 +8,7 @@
     "build": "node scripts/build.js",
     "serve": "node server/serve.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:auth": "node --test scripts/auth-flow.test.cjs scripts/profile-state.test.cjs"
+    "test:auth": "node --test scripts/auth-flow.test.cjs scripts/profile-state.test.cjs scripts/emergency-transit.test.cjs"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

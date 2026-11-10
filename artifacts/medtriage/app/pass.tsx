@@ -1,43 +1,65 @@
-import React, { useState } from 'react';
-import { router } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import QRCode from 'react-native-qrcode-svg';
-import * as Haptics from 'expo-haptics';
-import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { BodyText, Eyebrow, IconButton, Pill, PrimaryButton, Screen, SectionTitle, SurfaceCard } from '@/components/UI';
-import { useColors } from '@/hooks/useColors';
-import { useMedtriage } from '@/context/MedtriageContext';
-import ConfirmationDialog from '@/components/ConfirmationDialog';
+import React, { useState } from "react";
+import { router } from "expo-router";
+import { Feather } from "@expo/vector-icons";
+import QRCode from "react-native-qrcode-svg";
+import * as Haptics from "expo-haptics";
+import {
+  Alert,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import {
+  BodyText,
+  Eyebrow,
+  IconButton,
+  Pill,
+  PrimaryButton,
+  Screen,
+  SectionTitle,
+  SurfaceCard,
+} from "@/components/UI";
+import { useColors } from "@/hooks/useColors";
+import { useMedtriage } from "@/context/MedtriageContext";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 
 export default function PassScreen() {
   const colors = useColors();
-  const { appointment, appointmentLoading, updateAppointmentRating, cancelAppointment } = useMedtriage();
+  const {
+    appointment,
+    appointmentLoading,
+    updateAppointmentRating,
+    cancelAppointment,
+  } = useMedtriage();
   const [rating, setRating] = useState(appointment?.rating ?? 0);
   const [saving, setSaving] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const cancelNow = async () => {
     try {
       await cancelAppointment();
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     } catch {
-      if (Platform.OS === 'web') window.alert('ใช้สิทธิยกเลิกครบ 2 ครั้งต่อวันแล้ว');
-      else Alert.alert('ยกเลิกไม่ได้','ใช้สิทธิยกเลิกครบ 2 ครั้งต่อวันแล้ว');
+      if (Platform.OS === "web")
+        window.alert("ใช้สิทธิยกเลิกครบ 2 ครั้งต่อวันแล้ว");
+      else Alert.alert("ยกเลิกไม่ได้", "ใช้สิทธิยกเลิกครบ 2 ครั้งต่อวันแล้ว");
     }
   };
   const requestCancellation = () => setShowCancelConfirm(true);
 
   const confirmRating = async () => {
     if (!rating) {
-      Alert.alert('เลือกคะแนนก่อน', 'แตะดาวเพื่อให้คะแนนบริการตัวอย่าง');
+      Alert.alert("เลือกคะแนนก่อน", "แตะดาวเพื่อให้คะแนนบริการตัวอย่าง");
       return;
     }
     setSaving(true);
     try {
       await updateAppointmentRating(rating);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     } catch {
-      Alert.alert('บันทึกคะแนนไม่ได้', 'ลองอีกครั้ง');
+      Alert.alert("บันทึกคะแนนไม่ได้", "ลองอีกครั้ง");
     } finally {
       setSaving(false);
     }
@@ -55,12 +77,20 @@ export default function PassScreen() {
     return (
       <Screen contentStyle={styles.page}>
         <View style={styles.header}>
-          <IconButton icon="arrow-left" label="ย้อนกลับ" onPress={() => router.back()} />
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>บัตรคิว</Text>
+          <IconButton
+            icon="arrow-left"
+            label="ย้อนกลับ"
+            onPress={() => router.back()}
+          />
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>
+            บัตรคิว
+          </Text>
           <View style={{ width: 44 }} />
         </View>
         <SurfaceCard style={styles.emptyCard}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.secondary }]}>
+          <View
+            style={[styles.emptyIcon, { backgroundColor: colors.secondary }]}
+          >
             <Feather name="grid" size={24} color={colors.secondaryForeground} />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
@@ -70,7 +100,7 @@ export default function PassScreen() {
           <PrimaryButton
             title="ค้นหาโรงพยาบาล"
             icon="map-pin"
-            onPress={() => router.push('/(tabs)/hospitals')}
+            onPress={() => router.push("/(tabs)/hospitals")}
           />
         </SurfaceCard>
       </Screen>
@@ -80,7 +110,11 @@ export default function PassScreen() {
   return (
     <Screen contentStyle={styles.page}>
       <View style={styles.header}>
-        <IconButton icon="arrow-left" label="ย้อนกลับ" onPress={() => router.back()} />
+        <IconButton
+          icon="arrow-left"
+          label="ย้อนกลับ"
+          onPress={() => router.back()}
+        />
         <View style={styles.headerCopy}>
           <Eyebrow>บัตรคิวดิจิทัล</Eyebrow>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>
@@ -98,14 +132,20 @@ export default function PassScreen() {
       </View>
 
       <SurfaceCard style={styles.qrCard}>
-        <Pill tone="teal">{appointment.kind === 'checkin' ? 'คิวเช็คอินตัวอย่าง' : 'คิวนัดหมายตัวอย่าง'}</Pill>
-        <Text style={[styles.queueLabel, { color: colors.mutedForeground }]}>หมายเลขคิวตัวอย่าง</Text>
+        <Pill tone="teal">
+          {appointment.kind === "checkin"
+            ? "คิวเช็คอินตัวอย่าง"
+            : "คิวนัดหมายตัวอย่าง"}
+        </Pill>
+        <Text style={[styles.queueLabel, { color: colors.mutedForeground }]}>
+          หมายเลขคิวตัวอย่าง
+        </Text>
         <Text style={[styles.queueNumber, { color: colors.foreground }]}>
           {appointment.reference.slice(-4)}
         </Text>
         <View style={styles.qrFrame}>
           <QRCode
-            value={`medtriage-demo:${appointment.reference}`}
+            value={`meddy-demo:${appointment.reference}`}
             size={190}
             color="#0D2C54"
             backgroundColor="#FFFFFF"
@@ -119,26 +159,69 @@ export default function PassScreen() {
 
       <SurfaceCard style={styles.appointmentCard}>
         <SectionTitle title="รายละเอียดนัดหมาย" />
-        <DetailRow icon="map-pin" label="สถานพยาบาล" value={appointment.hospitalName} />
-        <DetailRow icon="activity" label="แผนก" value={appointment.department} />
+        <DetailRow
+          icon="map-pin"
+          label="สถานพยาบาล"
+          value={appointment.hospitalName}
+        />
+        <DetailRow
+          icon="activity"
+          label="แผนก"
+          value={appointment.department}
+        />
         <DetailRow icon="user" label="แพทย์" value={appointment.doctor} />
-        <DetailRow icon="calendar" label="วันที่" value={appointment.dateLabel} />
+        <DetailRow
+          icon="calendar"
+          label="วันที่"
+          value={appointment.dateLabel}
+        />
         <DetailRow icon="clock" label="เวลา" value={appointment.timeSlot} />
       </SurfaceCard>
 
-      <View style={styles.cancelNotice}><Feather name="alert-circle" size={16} color="#9A5A00"/><Text style={styles.cancelText}>นัดนี้เป็นตัวอย่าง · หากไม่มาตามนัดจริง อาจมีเงื่อนไขหรือค่าธรรมเนียมตามนโยบายสถานพยาบาล</Text></View>
-      <Pressable accessibilityRole="button" onPress={requestCancellation} style={({pressed})=>[styles.cancelButton,{borderColor:colors.destructive,opacity:pressed?0.7:1}]}><Feather name="x-circle" size={17} color={colors.destructive}/><Text style={[styles.cancelButtonText,{color:colors.destructive}]}>ยกเลิกการนัดหมาย (ใช้สิทธิได้ 2 ครั้ง/วัน)</Text></Pressable>
+      <View style={styles.cancelNotice}>
+        <Feather name="alert-circle" size={16} color="#9A5A00" />
+        <Text style={styles.cancelText}>
+          นัดนี้เป็นตัวอย่าง · หากไม่มาตามนัดจริง
+          อาจมีเงื่อนไขหรือค่าธรรมเนียมตามนโยบายสถานพยาบาล
+        </Text>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        onPress={requestCancellation}
+        style={({ pressed }) => [
+          styles.cancelButton,
+          { borderColor: colors.destructive, opacity: pressed ? 0.7 : 1 },
+        ]}
+      >
+        <Feather name="x-circle" size={17} color={colors.destructive} />
+        <Text style={[styles.cancelButtonText, { color: colors.destructive }]}>
+          ยกเลิกการนัดหมาย (ใช้สิทธิได้ 2 ครั้ง/วัน)
+        </Text>
+      </Pressable>
 
       <SurfaceCard style={styles.triageCard}>
-        <SectionTitle title="สรุปข้อมูลส่งตัวเบื้องต้น" detail="ข้อมูลตัวอย่างในอุปกรณ์นี้" />
+        <SectionTitle
+          title="สรุปข้อมูลส่งตัวเบื้องต้น"
+          detail="ข้อมูลตัวอย่างในอุปกรณ์นี้"
+        />
         <View style={styles.historyLine}>
-          <View style={[styles.historyBullet, { backgroundColor: colors.accentForeground }]} />
+          <View
+            style={[
+              styles.historyBullet,
+              { backgroundColor: colors.accentForeground },
+            ]}
+          />
           <Text style={[styles.historyText, { color: colors.foreground }]}>
             ผู้ป่วย: {appointment.patientName || "ข้อมูลตัวอย่าง"}
           </Text>
         </View>
         <View style={styles.historyLine}>
-          <View style={[styles.historyBullet, { backgroundColor: colors.accentForeground }]} />
+          <View
+            style={[
+              styles.historyBullet,
+              { backgroundColor: colors.accentForeground },
+            ]}
+          />
           <Text style={[styles.historyText, { color: colors.foreground }]}>
             ข้อมูลส่งตัวเบื้องต้น: ผลคัดกรองตัวอย่าง ยังไม่ผ่านการวินิจฉัย
           </Text>
@@ -150,7 +233,9 @@ export default function PassScreen() {
 
       <SurfaceCard style={styles.ratingCard}>
         <View style={styles.ratingHeading}>
-          <View style={[styles.ratingIcon, { backgroundColor: colors.secondary }]}>
+          <View
+            style={[styles.ratingIcon, { backgroundColor: colors.secondary }]}
+          >
             <Feather name="star" size={17} color={colors.secondaryForeground} />
           </View>
           <View style={styles.ratingCopy}>
@@ -172,13 +257,16 @@ export default function PassScreen() {
               testID={`rating-star-${star}`}
               onPress={() => setRating(star)}
               hitSlop={5}
-              style={({ pressed }) => [styles.starButton, { opacity: pressed ? 0.65 : 1 }]}
+              style={({ pressed }) => [
+                styles.starButton,
+                { opacity: pressed ? 0.65 : 1 },
+              ]}
             >
               <Feather
-                name={star <= rating ? 'star' : 'star'}
+                name={star <= rating ? "star" : "star"}
                 size={28}
-                color={star <= rating ? '#D49625' : colors.border}
-                fill={star <= rating ? '#D49625' : 'transparent'}
+                color={star <= rating ? "#D49625" : colors.border}
+                fill={star <= rating ? "#D49625" : "transparent"}
               />
             </Pressable>
           ))}
@@ -201,7 +289,10 @@ export default function PassScreen() {
         confirmLabel="ยืนยันยกเลิก"
         icon="calendar"
         onCancel={() => setShowCancelConfirm(false)}
-        onConfirm={() => { setShowCancelConfirm(false); void cancelNow(); }}
+        onConfirm={() => {
+          setShowCancelConfirm(false);
+          void cancelNow();
+        }}
       />
     </Screen>
   );
@@ -212,7 +303,7 @@ function DetailRow({
   label,
   value,
 }: {
-  icon: React.ComponentProps<typeof Feather>['name'];
+  icon: React.ComponentProps<typeof Feather>["name"];
   label: string;
   value: string;
 }) {
@@ -220,46 +311,115 @@ function DetailRow({
   return (
     <View style={[styles.detailRow, { borderTopColor: colors.border }]}>
       <Feather name={icon} size={16} color={colors.secondaryForeground} />
-      <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>{label}</Text>
-      <Text style={[styles.detailValue, { color: colors.foreground }]}>{value}</Text>
+      <Text style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+        {label}
+      </Text>
+      <Text style={[styles.detailValue, { color: colors.foreground }]}>
+        {value}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   page: { gap: 17 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headerCopy: { alignItems: 'center', gap: 3 },
-  headerTitle: { fontSize: 19, fontWeight: '800' },
-  demoBanner: { minHeight: 43, paddingHorizontal: 12, borderRadius: 13, flexDirection: 'row', alignItems: 'center', gap: 9 },
-  demoText: { flex: 1, fontSize: 11, lineHeight: 17, fontWeight: '600' },
-  qrCard: { alignItems: 'center', gap: 9, paddingVertical: 20 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerCopy: { alignItems: "center", gap: 3 },
+  headerTitle: { fontSize: 19, fontWeight: "800" },
+  demoBanner: {
+    minHeight: 43,
+    paddingHorizontal: 12,
+    borderRadius: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+  demoText: { flex: 1, fontSize: 11, lineHeight: 17, fontWeight: "600" },
+  qrCard: { alignItems: "center", gap: 9, paddingVertical: 20 },
   queueLabel: { fontSize: 12, marginTop: 3 },
-  queueNumber: { fontSize: 32, fontWeight: '900', letterSpacing: 2 },
-  qrFrame: { backgroundColor: '#FFFFFF', padding: 12, borderRadius: 18, marginTop: 5 },
-  qrCaption: { fontSize: 11, textAlign: 'center' },
+  queueNumber: { fontSize: 32, fontWeight: "900", letterSpacing: 2 },
+  qrFrame: {
+    backgroundColor: "#FFFFFF",
+    padding: 12,
+    borderRadius: 18,
+    marginTop: 5,
+  },
+  qrCaption: { fontSize: 11, textAlign: "center" },
   appointmentCard: { gap: 12 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 9, borderTopWidth: 1, paddingTop: 11 },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    borderTopWidth: 1,
+    paddingTop: 11,
+  },
   detailLabel: { width: 62, fontSize: 11 },
-  detailValue: { flex: 1, fontSize: 12, fontWeight: '700', textAlign: 'right', lineHeight: 18 },
+  detailValue: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "right",
+    lineHeight: 18,
+  },
   triageCard: { gap: 12 },
-  historyLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
+  historyLine: { flexDirection: "row", alignItems: "flex-start", gap: 9 },
   historyBullet: { width: 7, height: 7, borderRadius: 4, marginTop: 7 },
   historyText: { flex: 1, fontSize: 12, lineHeight: 19 },
   historyDisclaimer: { fontSize: 10, lineHeight: 16, marginTop: 2 },
   ratingCard: { gap: 13 },
-  ratingHeading: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  ratingIcon: { width: 36, height: 36, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  ratingHeading: { flexDirection: "row", alignItems: "center", gap: 10 },
+  ratingIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   ratingCopy: { gap: 3 },
-  ratingTitle: { fontSize: 14, fontWeight: '800' },
+  ratingTitle: { fontSize: 14, fontWeight: "800" },
   ratingSub: { fontSize: 11 },
-  stars: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
-  starButton: { minWidth: 39, minHeight: 45, alignItems: 'center', justifyContent: 'center' },
-  emptyCard: { alignItems: 'center', gap: 13, paddingVertical: 32 },
-  emptyIcon: { width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  emptyTitle: { fontSize: 18, fontWeight: '800' },
-  cancelNotice:{flexDirection:'row',alignItems:'flex-start',gap:8,backgroundColor:'#FFF4DE',padding:12,borderRadius:14},
-  cancelText:{flex:1,color:'#805000',fontSize:11,lineHeight:17},
-  cancelButton:{minHeight:46,borderWidth:1,borderRadius:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8},
-  cancelButtonText:{fontSize:12,fontWeight:'800'},
+  stars: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+  starButton: {
+    minWidth: 39,
+    minHeight: 45,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyCard: { alignItems: "center", gap: 13, paddingVertical: 32 },
+  emptyIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyTitle: { fontSize: 18, fontWeight: "800" },
+  cancelNotice: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: "#FFF4DE",
+    padding: 12,
+    borderRadius: 14,
+  },
+  cancelText: { flex: 1, color: "#805000", fontSize: 11, lineHeight: 17 },
+  cancelButton: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  cancelButtonText: { fontSize: 12, fontWeight: "800" },
 });

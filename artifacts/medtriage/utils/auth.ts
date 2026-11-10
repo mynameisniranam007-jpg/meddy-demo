@@ -1,3 +1,5 @@
+import { normalizeNationalId } from "./nationalId";
+import { normalizePatientProfile } from "../constants/profile";
 // Persist only salted password verifiers for this local prototype; OTP challenges stay in memory.
 import {
   checkDemoPassword,
@@ -11,6 +13,8 @@ export type AuthSession = {
   userId: string;
   identifier: string;
   displayName: string;
+  firstName?: string;
+  lastName?: string;
   refreshToken?: string;
   accessToken?: string;
 };
@@ -27,22 +31,13 @@ let challenge: {
   verified: boolean;
 } | null = null;
 export function cleanText(value: string, limit = 200) {
-  return value
+  return (typeof value === "string" ? value : "")
     .replace(/[\u0000-\u001f\u007f]/g, "")
     .trim()
     .slice(0, limit);
 }
 export function normalizeIdentifier(value: string) {
-  const input = cleanText(value, 254);
-  if (input.includes("@")) {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input))
-      throw new Error("กรอกอีเมลให้ถูกต้อง");
-    return input.toLowerCase();
-  }
-  const phone = input.replace(/[\s()-]/g, "");
-  if (!/^0\d{9}$/.test(phone) && !/^\+66\d{9}$/.test(phone))
-    throw new Error("กรอกเบอร์โทร 10 หลัก หรืออีเมล");
-  return phone.startsWith("0") ? "+66" + phone.slice(1) : phone;
+  return normalizeNationalId(value);
 }
 export function validatePassword(value: string) {
   if (value.length < 8 || value.length > 128 || !/\S/.test(value))
@@ -78,17 +73,30 @@ async function call<T>(path: string, body: object): Promise<T> {
 export async function registerAccount(
   identifier: string,
   password: string,
-  displayName: string,
+  firstName: string,
+  lastName: string,
 ) {
   identifier = normalizeIdentifier(identifier);
   validatePassword(password);
-  displayName = cleanText(displayName, 100);
-  if (!displayName) throw new Error("กรอกชื่อที่ใช้แสดง");
+  firstName = cleanText(firstName, 100);
+  lastName = cleanText(lastName, 100);
+  if (!firstName || !lastName)
+    throw new Error("กรอกชื่อและนามสกุลให้ครบทั้งสองช่อง");
+  const profile = normalizePatientProfile({
+    firstName,
+    lastName,
+    fullName: firstName + " " + lastName,
+  });
+  firstName = profile.firstName;
+  lastName = profile.lastName;
+  const displayName = profile.fullName;
   if (!isDemoAuth)
     return call<AuthSession>("/register", {
       identifier,
       password,
       displayName,
+      firstName,
+      lastName,
     });
   const randomId = Array.from(randomBytes(16), (byte) =>
     byte.toString(16).padStart(2, "0"),
@@ -97,6 +105,8 @@ export async function registerAccount(
     userId: "demo-" + randomId,
     identifier,
     displayName,
+    firstName,
+    lastName,
   };
   const verifier = await passwordVerifier(password);
   await updateDemoAccounts(async (accounts) => {
@@ -113,7 +123,7 @@ export async function signIn(identifier: string, password: string) {
     (a) => a.session.identifier === identifier,
   );
   if (!account || !(await checkDemoPassword(account, password)))
-    throw new Error("อีเมล/เบอร์โทรหรือรหัสผ่านไม่ถูกต้อง");
+    throw new Error("เลขบัตรประชาชนหรือรหัสผ่านไม่ถูกต้อง");
   return account.session;
 }
 export async function requestOtp(

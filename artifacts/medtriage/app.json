@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Medtriage",
-    "slug": "medtriage",
+    "name": "Meddy",
+    "slug": "meddy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "medtriage",
+    "scheme": "meddy",
     "userInterfaceStyle": "automatic",
     "splash": {
       "backgroundColor": "#F4F8FA",
@@ -17,14 +17,16 @@
     },
     "android": {},
     "web": {
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon.png",
+      "name": "Meddy",
+      "shortName": "Meddy"
     },
     "plugins": [
       "expo-router",
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "อนุญาตให้ MedTriage ใช้ Face ID เพื่อเข้าสู่ระบบของคุณ"
+          "faceIDPermission": "อนุญาตให้ Meddy ใช้ Face ID เพื่อเข้าสู่ระบบของคุณ"
         }
       ],
       "expo-secure-store"

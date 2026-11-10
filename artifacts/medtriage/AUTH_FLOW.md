@@ -1,4 +1,4 @@
-# Authentication and caregiver flow
+# Meddy — Authentication and caregiver flow
 
 GitHub Pages remains a presentation demo. Without `EXPO_PUBLIC_AUTH_API_URL`, the prototype stores a versioned local snapshot (Guest triage/result, booking draft, active family profile, demo identity and appointments) in AsyncStorage/localStorage and restores it before mounting screens. Demo accounts persist separately using a random 16-byte salt and PBKDF2-HMAC-SHA256 password verifier (100,000 iterations); plaintext passwords are never saved. OTP challenges/reset tokens remain ephemeral and must be requested again if the recovery page is reloaded. This client-only demonstration is not a production authentication or health-record security boundary; persisted health profiles are not encrypted. No real SMS or email is sent. The recovery screen displays a clearly marked demo code. Never use real medical information or a password reused elsewhere.
 
@@ -12,7 +12,7 @@ The profile setup screen offers Skip, which opens Home immediately and leaves a 
 
 Set `EXPO_PUBLIC_AUTH_API_URL` to an auth service base URL. This URL is public configuration, never a secret. No production auth server is included in this static frontend change. All endpoints accept JSON via POST:
 
-- `/register`: `{identifier,password,displayName}` → AuthSession, after identity verification defined by the service.
+- `/register`: `{identifier,password,firstName,lastName,displayName}` → AuthSession, after identity verification defined by the service.
 - `/login`: `{identifier,password}` → AuthSession.
 - `/password/request`: `{identifier}` → `{challengeId}`. Send a six digit code over the registered email/SMS channel. Return the same generic result for nonexistent accounts.
 - `/password/verify`: `{challengeId,otp}` → `{resetToken}`. Enforce expiry, attempt limits and single use server side.
@@ -20,7 +20,7 @@ Set `EXPO_PUBLIC_AUTH_API_URL` to an auth service base URL. This URL is public c
 - `/session/refresh`: `{refreshToken}` → AuthSession with rotated refresh token.
 - `/logout`: `{refreshToken}` → `{}` and revoke the session.
 
-AuthSession: `{userId,identifier,displayName,accessToken,refreshToken}`. Authentication, credential hashing, verification of contact channels, rate limiting and caregiver/health data authorization belong on the server. Do not return `demoOtp` from the real service. Do not store or log passwords or health information in client analytics.
+AuthSession: `{userId,identifier,firstName,lastName,displayName,accessToken,refreshToken}`. The identifier is the normalized 13-digit Thai National ID for registration, login and recovery lookup; phone is added in Profile Setup and is never inferred from the identifier. Authentication, credential hashing, verification of contact channels, rate limiting and caregiver/health data authorization belong on the server. Do not return `demoOtp` from the real service. Do not store or log passwords or health information in client analytics.
 
 ## Biometrics
 
@@ -40,3 +40,11 @@ Native builds use expo-local-authentication and expo-secure-store. Users opt in 
 Run `pnpm --filter @workspace/medtriage test:auth` for persisted password-reset/reload, name migration, malformed storage, triage continuation and active-patient booking/consultation binding tests. Run `typecheck` and Expo web export before deployment. Input forms share one KeyboardAwareScrollViewCompat per Screen; standalone AuthField/PatientProfileEditor forms use KeyboardAwareForm, avoiding nested scroll views per field. Web visualViewport padding and native keyboard-aware scrolling keep lower actions reachable. Validate real keyboard interactions on iOS/Android devices separately.
 
 ThaID and หมอพร้อม remain visible as external identity options with an explicit not-connected notice. No LINE login or OTP-based sign-in is introduced. Production refresh/access tokens are excluded from AsyncStorage snapshots.
+
+## National ID login and emergency transit
+
+Register uses separate firstName and lastName inputs. The prototype validates only 13-digit formatting (including formatted ID input); it does not verify a government identity or ID checksum. Use invented demo IDs such as 0000000000000. Previous email/phone demo accounts cannot be mapped to a National ID automatically: register a new fictional National ID account. Old email/phone session identities are not restored as logged-in sessions. Internal storage keys and package/import paths remain compatible with prior data; visible app names, Expo metadata and Face ID prompt now say Meddy.
+
+Urgent hospital selection navigates to emergency-transit with hospitalId. This screen remains available to guests. The selected destination restores from the route or persisted selection. Invalid explicit IDs show a recovery screen rather than selecting an unrelated hospital. ETA is a static presentation estimate from straight-line distance, not a routing/traffic service. Opening Maps supplies only hospital destination coordinates. The 1669 button opens the dialer and does not claim that an ambulance was dispatched. Hospital contact uses the existing general switchboard number, not an unverified emergency department number.
+
+References for the implemented links and emergency call wording: [Google Maps URLs](https://developers.google.com/maps/documentation/urls/get-started), [Apple unified Maps URLs](https://developer.apple.com/documentation/mapkit/unified-map-urls), [NIEMS first aid guide](https://www.niems.go.th/1/UploadAttachFile/2025/EBook/410985_20250717133737.pdf). Test dialing/native Maps handoff on a device without placing an unnecessary emergency call.
