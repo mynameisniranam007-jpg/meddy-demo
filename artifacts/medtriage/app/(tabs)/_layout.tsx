@@ -1,19 +1,21 @@
-import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { useColors } from '@/hooks/useColors';
-import { useThemePreference } from '@/context/ThemeContext';
-import { Feather } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { Tabs } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React from "react";
+import { Platform, StyleSheet, View } from "react-native";
+import { useColors } from "@/hooks/useColors";
+import { useThemePreference } from "@/context/ThemeContext";
+import { Feather } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useMedtriage } from "@/context/MedtriageContext";
 
 function ClassicTabLayout() {
   const colors = useColors();
   const { colorScheme } = useThemePreference();
   const insets = useSafeAreaInsets();
-  const isDark = colorScheme === 'dark';
-  const isIOS = Platform.OS === 'ios';
-  const isWeb = Platform.OS === 'web';
+  const { emergencyTransit } = useMedtriage();
+  const isDark = colorScheme === "dark";
+  const isIOS = Platform.OS === "ios";
+  const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
@@ -22,8 +24,9 @@ function ClassicTabLayout() {
         tabBarInactiveTintColor: colors.mutedForeground,
         headerShown: false,
         tabBarStyle: {
-          position: 'absolute',
-          backgroundColor: isIOS ? 'transparent' : colors.card,
+          display: emergencyTransit ? "none" : "flex",
+          position: "absolute",
+          backgroundColor: isIOS ? "transparent" : colors.card,
           borderTopWidth: isWeb ? 1 : 0,
           borderTopColor: colors.border,
           elevation: 0,
@@ -35,7 +38,7 @@ function ClassicTabLayout() {
           isIOS ? (
             <BlurView
               intensity={100}
-              tint={isDark ? 'dark' : 'light'}
+              tint={isDark ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             />
           ) : (
@@ -51,14 +54,16 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'หน้าหลัก',
-          tabBarIcon: ({ color }) => <Feather name="home" size={21} color={color} />,
+          title: "หน้าหลัก",
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={21} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="hospitals"
         options={{
-          title: 'โรงพยาบาล',
+          title: "โรงพยาบาล",
           tabBarIcon: ({ color }) => (
             <Feather name="plus-square" size={21} color={color} />
           ),
@@ -67,7 +72,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="news"
         options={{
-          title: 'ข่าวสาร',
+          title: "ข่าวสาร",
           tabBarIcon: ({ color }) => (
             <Feather name="book-open" size={21} color={color} />
           ),
@@ -76,8 +81,10 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'โปรไฟล์',
-          tabBarIcon: ({ color }) => <Feather name="user" size={21} color={color} />,
+          title: "โปรไฟล์",
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" size={21} color={color} />
+          ),
         }}
       />
     </Tabs>
@@ -87,3 +94,4 @@ function ClassicTabLayout() {
 export default function TabLayout() {
   return <ClassicTabLayout />;
 }
+

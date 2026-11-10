@@ -41,8 +41,6 @@ export default function ProfileScreen() {
   const performLogout = async () => {
     try {
       await logout();
-      router.dismissAll();
-      router.replace("/");
     } catch {
       if (Platform.OS === "web")
         window.alert("ลบข้อมูลไม่สำเร็จ กรุณาลองออกจากระบบอีกครั้ง");
@@ -358,3 +356,4 @@ const styles = StyleSheet.create({
   menuDetail: { fontSize: 11 },
   footerNote: { textAlign: "center", fontSize: 11, lineHeight: 17 },
 });
+

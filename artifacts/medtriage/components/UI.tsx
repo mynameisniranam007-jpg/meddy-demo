@@ -15,6 +15,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { design } from "@/constants/design";
 
 type IconName = React.ComponentProps<typeof Feather>["name"];
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -80,7 +81,7 @@ export function SurfaceCard({
         {
           backgroundColor: colors.card,
           borderColor: colors.border,
-          borderRadius: colors.radius,
+          borderRadius: design.cardRadius,
         },
         style,
       ]}
@@ -169,7 +170,7 @@ export function PrimaryButton({
           backgroundColor: disabled ? colors.muted : colors.primary,
           borderWidth: 1.5,
           borderColor: disabled ? colors.border : colors.primary,
-          borderRadius: colors.radius,
+          borderRadius: design.controlRadius,
         },
         { transform: [{ scale }] },
         style,
@@ -242,10 +243,10 @@ export function SecondaryButton({
       style={[
         styles.secondaryButton,
         {
-          backgroundColor: colors.secondary,
-          borderColor: colors.secondaryForeground,
-          borderWidth: 1.5,
-          borderRadius: colors.radius,
+          backgroundColor: colors.card,
+          borderColor: colors.input,
+          borderWidth: 1,
+          borderRadius: design.controlRadius,
         },
         { transform: [{ scale }] },
         { opacity: disabled ? 0.5 : 1 },
@@ -358,22 +359,22 @@ export function BodyText({
 const styles = StyleSheet.create({
   page: { flex: 1 },
   pageContent: {
-    paddingHorizontal: 20,
-    gap: 18,
+    paddingHorizontal: design.pagePadding,
+    gap: design.sectionGap,
     flexGrow: 1,
-    maxWidth: 680,
+    maxWidth: design.contentWidth,
     width: "100%",
     alignSelf: "center",
   },
   card: {
     borderWidth: 1,
-    padding: 18,
+    padding: design.cardPadding,
     gap: 12,
     shadowColor: "#0D2C54",
     shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0,
     shadowRadius: 14,
-    elevation: 2,
+    elevation: 0,
   },
   sectionTitleRow: {
     flexDirection: "row",
@@ -382,8 +383,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionTitleCopy: { flex: 1, gap: 3 },
-  sectionTitle: { fontSize: 19, fontWeight: "700", lineHeight: 27 },
-  sectionDetail: { fontSize: 13, lineHeight: 20 },
+  sectionTitle: design.heading,
+  sectionDetail: { fontSize: 14, lineHeight: 23 },
   eyebrow: {
     fontSize: 12,
     fontWeight: "700",
@@ -424,5 +425,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pillText: { fontSize: 11, fontWeight: "700" },
-  bodyText: { fontSize: 14, lineHeight: 22 },
+  bodyText: design.body,
 });
+

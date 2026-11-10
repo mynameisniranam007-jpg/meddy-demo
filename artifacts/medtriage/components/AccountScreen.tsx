@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { router } from "expo-router";
-import { Feather, FontAwesome } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   Platform,
@@ -17,6 +17,7 @@ import { useColors } from "@/hooks/useColors";
 import { isDemoAuth, registerAccount, signIn } from "@/utils/auth";
 import { biometricSession } from "@/utils/biometrics";
 import { useMedtriage } from "@/context/MedtriageContext";
+import { design } from "@/constants/design";
 
 export default function AccountScreen({
   register = false,
@@ -27,6 +28,7 @@ export default function AccountScreen({
   const insets = useSafeAreaInsets();
   const { authenticate } = useMedtriage();
   const [firstName, setFirstName] = useState("");
+  const [title, setTitle] = useState("");
   const [lastName, setLastName] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -42,10 +44,17 @@ export default function AccountScreen({
     try {
       if (register && password !== confirm)
         throw new Error("รหัสผ่านทั้งสองช่องต้องตรงกัน");
+      if (register && !title) throw new Error("เลือกคำนำหน้าชื่อ");
       const session = biometric
         ? await biometricSession()
         : register
-          ? await registerAccount(identifier, password, firstName, lastName)
+          ? await registerAccount(
+              identifier,
+              password,
+              firstName,
+              lastName,
+              title,
+            )
           : await signIn(identifier, password);
       authenticate(session);
       setPassword("");
@@ -144,9 +153,51 @@ export default function AccountScreen({
           <View style={styles.form}>
             {register ? (
               <>
+                <View style={{ gap: 8 }}>
+                  <Text style={[styles.linkText, { color: colors.foreground }]}>
+                    คำนำหน้าชื่อ
+                  </Text>
+                  <View
+                    accessibilityRole="radiogroup"
+                    style={styles.externalRow}
+                  >
+                    {["นาย", "นาง", "นางสาว"].map((value) => (
+                      <Pressable
+                        key={value}
+                        accessibilityRole="radio"
+                        accessibilityState={{
+                          checked: title === value,
+                          disabled: busy,
+                        }}
+                        disabled={busy}
+                        onPress={() => setTitle(value)}
+                        style={[
+                          styles.titleChoice,
+                          {
+                            borderColor:
+                              title === value ? colors.primary : colors.input,
+                            backgroundColor:
+                              title === value ? colors.secondary : colors.card,
+                          },
+                        ]}
+                      >
+                        <Feather
+                          name={title === value ? "check-circle" : "circle"}
+                          size={16}
+                          color={colors.primary}
+                        />
+                        <Text
+                          style={{ color: colors.foreground, fontSize: 14 }}
+                        >
+                          {value}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
                 <AuthField
                   label="ชื่อ (First Name)"
-                  placeholder="กรอกชื่อ"
+                  placeholder="ตัวอย่าง: สมศรี"
                   value={firstName}
                   onChangeText={setFirstName}
                   maxLength={100}
@@ -156,7 +207,7 @@ export default function AccountScreen({
                 />
                 <AuthField
                   label="นามสกุล (Last Name)"
-                  placeholder="กรอกนามสกุล"
+                  placeholder="ตัวอย่าง: ใจดี"
                   value={lastName}
                   onChangeText={setLastName}
                   maxLength={100}
@@ -312,16 +363,6 @@ export default function AccountScreen({
           </View>
           <View style={styles.externalRow}>
             {externalOption(
-              "Google",
-              <FontAwesome name="google" size={20} color={colors.foreground} />,
-            )}
-            {externalOption(
-              "Apple",
-              <FontAwesome name="apple" size={23} color={colors.foreground} />,
-            )}
-          </View>
-          <View style={styles.externalRow}>
-            {externalOption(
               "ThaID",
               <Feather
                 name="credit-card"
@@ -448,7 +489,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.6,
   },
   subtitle: { fontSize: 15, lineHeight: 24 },
-  card: { padding: 20, borderWidth: 1, borderRadius: 24, gap: 14 },
+  card: {
+    padding: design.cardPadding,
+    borderWidth: 1,
+    borderRadius: design.cardRadius,
+    gap: 14,
+  },
   form: { gap: 20 },
   forgotLink: {
     alignSelf: "flex-end",
@@ -489,6 +535,16 @@ const styles = StyleSheet.create({
   line: { flex: 1, height: 1 },
   or: { fontSize: 11, fontWeight: "600", letterSpacing: 1 },
   externalRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  titleChoice: {
+    minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
   outlineButton: {
     flexGrow: 1,
     flexBasis: 120,

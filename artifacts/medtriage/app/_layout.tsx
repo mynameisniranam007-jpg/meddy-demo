@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import WebStyles from "@/components/WebStyles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -68,6 +69,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <WebStyles />
       <ThemeProvider>
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>
@@ -84,3 +86,4 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+

@@ -46,6 +46,7 @@ const caregiver = {
   userId: "owner",
   identifier: "0000000000000",
   displayName: "ผู้ดูแล",
+  title: "นาย",
 };
 function patient(id, name) {
   return {
@@ -148,6 +149,7 @@ test("guest assessment, auth continuation and active family survive serializatio
   const signedIn = state.authenticatedState(guest, caregiver);
   assert.equal(signedIn.familyMembers[0].profile.nationalId, "0000000000000");
   assert.equal(signedIn.familyMembers[0].profile.phone, "");
+  assert.equal(signedIn.familyMembers[0].profile.title, "นาย");
   assert.deepEqual(signedIn.pendingTriageSession, triage);
   assert.deepEqual(signedIn.bookingDraft, guest.bookingDraft);
   const withSelf = {
@@ -169,6 +171,40 @@ test("guest assessment, auth continuation and active family survive serializatio
   assert.equal(other.pendingTriageSession, null);
   assert.equal(other.familyMembers.length, 1);
   assert.equal(other.activePatientId, "another");
+});
+
+test("emergency mode survives refresh for guests and clears on arrival or logout", () => {
+  const traveling = {
+    ...state.emptyAppState(),
+    emergencyTransit: {
+      hospitalId: "thammasat",
+      startedAt: new Date().toISOString(),
+    },
+  };
+  const restored = state.restoreAppState(
+    state.serializeAppState(traveling, true),
+    true,
+  );
+  assert.deepEqual(restored.emergencyTransit, traveling.emergencyTransit);
+  assert.equal(restored.session, null);
+  assert.equal(
+    state.restoreAppState(
+      state.serializeAppState({ ...restored, emergencyTransit: null }, true),
+      true,
+    ).emergencyTransit,
+    null,
+  );
+  assert.equal(state.emptyAppState().emergencyTransit, null);
+  assert.equal(
+    state.restoreAppState(
+      JSON.stringify({
+        ...traveling,
+        emergencyTransit: { hospitalId: "thammasat", startedAt: "bad" },
+      }),
+      true,
+    ).emergencyTransit,
+    null,
+  );
 });
 
 test("booking and consultation bind the selected sub-profile, with non-null medical fields", () => {
@@ -226,3 +262,4 @@ test("booking and consultation bind the selected sub-profile, with non-null medi
   );
   assert.throws(() => state.bindAppointment(base, null, father, triage));
 });
+

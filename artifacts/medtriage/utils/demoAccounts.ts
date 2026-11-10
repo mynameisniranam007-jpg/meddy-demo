@@ -58,6 +58,9 @@ export async function readDemoAccounts(): Promise<DemoAccount[]> {
         userId: a.session.userId,
         identifier: a.session.identifier,
         displayName: a.session.displayName,
+        title: ["นาย", "นาง", "นางสาว"].includes(a.session.title ?? "")
+          ? a.session.title
+          : splitPatientName(a.session.displayName).title,
         firstName:
           a.session.firstName ??
           splitPatientName(a.session.displayName).firstName,
@@ -99,3 +102,4 @@ export async function checkDemoPassword(
       candidate.hash.charCodeAt(i) ^ account.verifier.hash.charCodeAt(i);
   return difference === 0;
 }
+

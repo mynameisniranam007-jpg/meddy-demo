@@ -35,6 +35,7 @@ export type PendingTriageSession = {
   assessment: TriageAssessment | null;
 };
 export type AppState = {
+  emergencyTransit: { hospitalId: string; startedAt: string } | null;
   version: 2;
   ownerId: string | null;
   session: AuthSession | null;
@@ -54,6 +55,7 @@ export type AppState = {
 export function emptyAppState(): AppState {
   return {
     version: 2,
+    emergencyTransit: null,
     ownerId: null,
     session: null,
     familyMembers: [],
@@ -84,6 +86,7 @@ export function authenticatedState(
       fullName: next.displayName,
       firstName: next.firstName ?? "",
       lastName: next.lastName ?? "",
+      title: next.title ?? "",
       nationalId: isNationalId(next.identifier) ? next.identifier : "",
     }),
   };
@@ -197,6 +200,9 @@ export function restoreAppState(
           displayName: text(s.displayName, 100),
           firstName: text(s.firstName, 100),
           lastName: text(s.lastName, 100),
+          title: ["นาย", "นาง", "นางสาว"].includes(String(s.title))
+            ? String(s.title)
+            : "",
         }
       : null;
   const seen = new Set<string>();
@@ -286,8 +292,16 @@ export function restoreAppState(
       parsedAppointment.rating = Number(appointment.rating);
   }
   const cancellations = record(v.cancellations);
+  const transit = record(v.emergencyTransit);
   return {
     ...initial,
+    emergencyTransit:
+      typeof transit.hospitalId === "string" &&
+      /^[a-z0-9-]{1,100}$/.test(transit.hospitalId) &&
+      typeof transit.startedAt === "string" &&
+      Number.isFinite(Date.parse(transit.startedAt))
+        ? { hospitalId: transit.hospitalId, startedAt: transit.startedAt }
+        : null,
     ownerId,
     session: validOwner ? session : null,
     familyMembers: validOwner ? familyMembers : [],
@@ -331,6 +345,7 @@ export function serializeAppState(
             displayName: state.session.displayName,
             firstName: state.session.firstName,
             lastName: state.session.lastName,
+            title: state.session.title,
           }
         : null,
     photoUri: photo(state.photoUri),
@@ -395,3 +410,4 @@ export function buildConsultationPayload(
     symptoms: triage?.symptoms ?? "",
   };
 }
+

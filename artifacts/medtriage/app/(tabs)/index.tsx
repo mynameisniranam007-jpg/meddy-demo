@@ -17,6 +17,7 @@ import { useColors } from "@/hooks/useColors";
 import { useMedtriage } from "@/context/MedtriageContext";
 import { healthNews } from "@/constants/news";
 import { PatientProfile, PROFILE_STORAGE_KEY } from "@/constants/profile";
+import { EmergencyTransitContent } from "@/components/EmergencyTransitContent";
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -26,6 +27,7 @@ export default function HomeScreen() {
     pendingDestination,
     resumeAfterAuth,
     pendingTriageSession,
+    emergencyTransit,
   } = useMedtriage();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationsRead, setNotificationsRead] = useState(false);
@@ -75,6 +77,14 @@ export default function HomeScreen() {
         },
       ];
   const unreadCount = notificationsRead ? 0 : displayedNotifications.length;
+
+  if (emergencyTransit)
+    return (
+      <EmergencyTransitContent
+        hospitalId={emergencyTransit.hospitalId}
+        embedded
+      />
+    );
 
   return (
     <Screen contentStyle={styles.page}>
@@ -699,3 +709,4 @@ const styles = StyleSheet.create({
   },
   testNotificationText: { fontSize: 12, fontWeight: "800" },
 });
+

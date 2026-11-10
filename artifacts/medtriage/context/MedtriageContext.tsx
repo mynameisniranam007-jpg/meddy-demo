@@ -99,6 +99,11 @@ function useAppState() {
     familyMembers.find((member) => member.id === state.activePatientId) ?? null;
   const selectedHospital =
     hospitals.find((h) => h.id === state.selectedHospitalId) ?? null;
+  const emergencyTransit =
+    state.emergencyTransit &&
+    hospitals.some((h) => h.id === state.emergencyTransit?.hospitalId)
+      ? state.emergencyTransit
+      : null;
   const patch = useCallback(
     (value: Partial<AppState>) =>
       setState((current) => ({ ...current, ...value })),
@@ -140,6 +145,16 @@ function useAppState() {
     (value: BookingDraft | null) => patch({ bookingDraft: value }),
     [patch],
   );
+  const startEmergencyTransit = (hospital: Hospital) => {
+    patch({
+      selectedHospitalId: hospital.id,
+      emergencyTransit: {
+        hospitalId: hospital.id,
+        startedAt: new Date().toISOString(),
+      },
+    });
+  };
+  const finishEmergencyTransit = () => patch({ emergencyTransit: null });
   const beginTriageSession = useCallback(
     (symptoms?: string) =>
       setState((current) => ({
@@ -263,25 +278,27 @@ function useAppState() {
   };
   const logout = async () => {
     paused.current = true;
+    setState(emptyAppState());
+    router.dismissAll();
+    router.replace("/");
     try {
       if (session) {
-        try {
-          await revokeSession(session);
-        } catch {
-          /* Local sign-out must still work offline. */
-        }
+        void revokeSession(session).catch(() => undefined);
       }
       await clearBiometrics();
       await queue.current;
       await AsyncStorage.removeItem(APP_STATE_KEY);
-      setState(emptyAppState());
       setStorageError("");
       persistenceEnabled.current = true;
     } finally {
       paused.current = false;
+      setState((current) => ({ ...current }));
     }
   };
   return {
+    emergencyTransit,
+    startEmergencyTransit,
+    finishEmergencyTransit,
     session,
     authStatus: session ? ("logged-in" as const) : ("guest" as const),
     familyMembers,
@@ -345,3 +362,4 @@ export function useMedtriage() {
   if (!context) throw new Error("Meddy provider is required");
   return context;
 }
+

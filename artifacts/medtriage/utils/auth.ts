@@ -15,6 +15,7 @@ export type AuthSession = {
   displayName: string;
   firstName?: string;
   lastName?: string;
+  title?: string;
   refreshToken?: string;
   accessToken?: string;
 };
@@ -75,14 +76,18 @@ export async function registerAccount(
   password: string,
   firstName: string,
   lastName: string,
+  title = "",
 ) {
   identifier = normalizeIdentifier(identifier);
   validatePassword(password);
   firstName = cleanText(firstName, 100);
   lastName = cleanText(lastName, 100);
+  if (title && !["นาย", "นาง", "นางสาว"].includes(title))
+    throw new Error("คำนำหน้าชื่อไม่ถูกต้อง");
   if (!firstName || !lastName)
     throw new Error("กรอกชื่อและนามสกุลให้ครบทั้งสองช่อง");
   const profile = normalizePatientProfile({
+    title,
     firstName,
     lastName,
     fullName: firstName + " " + lastName,
@@ -97,6 +102,7 @@ export async function registerAccount(
       displayName,
       firstName,
       lastName,
+      title,
     });
   const randomId = Array.from(randomBytes(16), (byte) =>
     byte.toString(16).padStart(2, "0"),
@@ -107,6 +113,7 @@ export async function registerAccount(
     displayName,
     firstName,
     lastName,
+    title,
   };
   const verifier = await passwordVerifier(password);
   await updateDemoAccounts(async (accounts) => {
@@ -205,3 +212,4 @@ export async function refreshSession(refreshToken: string) {
 export function cancelRecovery() {
   challenge = null;
 }
+

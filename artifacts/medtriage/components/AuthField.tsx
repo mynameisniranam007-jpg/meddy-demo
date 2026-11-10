@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+import { design } from "@/constants/design";
 export function AuthField({
   label,
   value,
@@ -28,7 +29,6 @@ export function AuthField({
 }) {
   const colors = useColors();
   const [visible, setVisible] = useState(false);
-  const [focused, setFocused] = useState(false);
   return (
     <KeyboardAwareForm style={styles.field}>
       <Text style={[styles.label, { color: colors.foreground }]}>{label}</Text>
@@ -36,8 +36,8 @@ export function AuthField({
         style={[
           styles.inputRow,
           {
-            borderColor: focused ? colors.secondaryForeground : colors.input,
-            backgroundColor: focused ? colors.card : colors.background,
+            borderColor: colors.input,
+            backgroundColor: colors.background,
             opacity: disabled ? 0.6 : 1,
           },
         ]}
@@ -45,7 +45,7 @@ export function AuthField({
         <Feather
           name={icon ?? (password ? "lock" : numeric ? "credit-card" : "user")}
           size={20}
-          color={focused ? colors.secondaryForeground : colors.mutedForeground}
+          color={colors.mutedForeground}
           style={styles.leadingIcon}
         />
         <TextInput
@@ -58,8 +58,6 @@ export function AuthField({
           editable={!disabled}
           placeholder={placeholder ?? (password ? "กรอกรหัสผ่าน" : label)}
           placeholderTextColor={colors.mutedForeground}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
           secureTextEntry={password && !visible}
           keyboardType={numeric ? "number-pad" : "default"}
           maxLength={maxLength}
@@ -93,14 +91,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderRadius: 16,
+    borderRadius: design.controlRadius,
   },
   leadingIcon: { marginLeft: 16 },
   input: {
     outlineWidth: 0,
     flex: 1,
     minWidth: 0,
-    minHeight: 56,
+    minHeight: design.controlHeight,
     paddingHorizontal: 12,
     paddingVertical: 14,
     fontSize: 16,

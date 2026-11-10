@@ -52,8 +52,14 @@ function departmentFor(text: string) {
 
 export default function RecommendedHospitalsScreen() {
   const colors = useColors();
-  const { symptoms, bodyParts, location, setLocation, setSelectedHospital } =
-    useMedtriage();
+  const {
+    symptoms,
+    bodyParts,
+    location,
+    setLocation,
+    setSelectedHospital,
+    startEmergencyTransit,
+  } = useMedtriage();
   const params = useLocalSearchParams<{ urgent?: string }>();
   const urgent = params.urgent === "1";
   const [locating, setLocating] = useState(false);
@@ -193,11 +199,8 @@ export default function RecommendedHospitalsScreen() {
                 title="กำลังไปโรงพยาบาลนี้"
                 icon="navigation"
                 onPress={() => {
-                  setSelectedHospital(h);
-                  router.push({
-                    pathname: "/emergency-transit",
-                    params: { hospitalId: h.id },
-                  });
+                  startEmergencyTransit(h);
+                  router.replace("/(tabs)");
                 }}
               />
             </SurfaceCard>
@@ -432,3 +435,4 @@ const styles = StyleSheet.create({
   cost: { fontSize: 14, fontWeight: "800" },
   costNote: { fontSize: 10, lineHeight: 15 },
 });
+

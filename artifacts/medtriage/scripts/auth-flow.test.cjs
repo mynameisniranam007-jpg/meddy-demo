@@ -22,6 +22,7 @@ test("password recovery updates durable local verifier, surviving a new service 
     "original-pass",
     "สมชาย",
     "ใจดี",
+    "นาย",
   );
   await assert.rejects(
     auth.registerAccount("0000000000000", "original-pass", "ซ้ำ", "ตัวอย่าง"),
@@ -43,6 +44,7 @@ test("password recovery updates durable local verifier, surviving a new service 
   );
   assert.equal(reloadedSession.firstName, "สมชาย");
   assert.equal(reloadedSession.lastName, "ใจดี");
+  assert.equal(reloadedSession.title, "นาย");
   let now = Date.now();
   const originalNow = Date.now;
   Date.now = () => now;
@@ -109,3 +111,4 @@ test("corrupt local account data produces a handled error instead of TypeError",
     (error) => !(error instanceof TypeError),
   );
 });
+

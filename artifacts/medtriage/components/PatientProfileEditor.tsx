@@ -798,9 +798,10 @@ const styles = StyleSheet.create({
   fieldHalf: { flex: 1, minWidth: 0 },
   fieldLabel: { fontSize: 13, fontWeight: "700" },
   input: {
+    outlineWidth: 0,
     minHeight: 48,
     borderWidth: 1.5,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
@@ -886,3 +887,4 @@ const styles = StyleSheet.create({
     margin: "1.5%",
   },
 });
+
