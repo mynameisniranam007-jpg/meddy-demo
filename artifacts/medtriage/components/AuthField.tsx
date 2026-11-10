@@ -97,6 +97,7 @@ const styles = StyleSheet.create({
   },
   leadingIcon: { marginLeft: 16 },
   input: {
+    outlineWidth: 0,
     flex: 1,
     minWidth: 0,
     minHeight: 56,
