@@ -32,6 +32,7 @@ function RootLayoutNav() {
         screenOptions={{ headerShown: false, animation: "ios_from_right" }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="welcome" />
         <Stack.Screen name="register" />
         <Stack.Screen name="recommended-hospitals" />
         <Stack.Screen name="emergency-transit" />

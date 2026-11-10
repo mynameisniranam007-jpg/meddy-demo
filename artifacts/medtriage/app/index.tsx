@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import {
@@ -13,12 +13,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { PrimaryButton, SecondaryButton } from "@/components/UI";
 import { useColors } from "@/hooks/useColors";
+import { useMedtriage } from "@/context/MedtriageContext";
 
 export default function WelcomeScreen() {
   const colors = useColors();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const wide = width >= 860;
+  const { emergencyTransit } = useMedtriage();
+  useEffect(() => {
+    if (emergencyTransit) router.replace("/(tabs)");
+  }, [emergencyTransit?.hospitalId]);
+  if (emergencyTransit) return null;
   return (
     <KeyboardAwareScrollViewCompat
       style={{ flex: 1, backgroundColor: colors.background }}

@@ -280,7 +280,7 @@ function useAppState() {
     paused.current = true;
     setState(emptyAppState());
     router.dismissAll();
-    router.replace("/");
+    router.replace("/welcome");
     try {
       if (session) {
         void revokeSession(session).catch(() => undefined);
