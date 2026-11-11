@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { router } from "expo-router";
-import { Feather } from "@expo/vector-icons";
-import { Modal, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import DoctorCard, { consultationDoctors } from "@/components/DoctorCard";
+import VideoCallModal from "@/components/VideoCallModal";
 import {
   BodyText,
   Eyebrow,
   IconButton,
-  Pill,
   PrimaryButton,
   SecondaryButton,
   Screen,
@@ -34,6 +34,12 @@ export default function TelemedicineScreen() {
     savePatientProfile,
   } = useMedtriage();
   const [call, setCall] = useState<ConsultationPayload | null>(null);
+  const [selectedDoctorId, setSelectedDoctorId] = useState(
+    consultationDoctors[0].id,
+  );
+  const [providerFilter, setProviderFilter] = useState<"general" | "resident">(
+    "general",
+  );
   const [requestedType, setRequestedType] = useState<"general" | "resident">(
     "general",
   );
@@ -47,7 +53,9 @@ export default function TelemedicineScreen() {
     setHealthOpen(false);
     setError("");
   }, [activePatient?.id]);
-  const chooseProvider = (type: "general" | "resident") => {
+  const chooseProvider = (doctor: (typeof consultationDoctors)[number]) => {
+    const type = doctor.provider;
+    setSelectedDoctorId(doctor.id);
     setError("");
     setRequestedType(type);
     if (!session) {
@@ -114,6 +122,9 @@ export default function TelemedicineScreen() {
   };
   const visibleCall =
     call && call.patientId === activePatient?.id ? call : null;
+  const selectedDoctor =
+    consultationDoctors.find((doctor) => doctor.id === selectedDoctorId) ??
+    consultationDoctors[0];
   return (
     <Screen contentStyle={styles.page}>
       <View style={styles.header}>
@@ -136,62 +147,70 @@ export default function TelemedicineScreen() {
           ผู้ป่วย:{" "}
           {activePatient?.profile.fullName || "เลือกผู้ป่วยหลังเข้าสู่ระบบ"}
         </Text>
-        <BodyText>เลือกประเภทแพทย์ก่อนโทร · หน้าจอสาธิต</BodyText>
-        <PrimaryButton
-          title="แพทย์ทั่วไป · ผู้ใช้จำนวนมาก อาจต้องรอ"
-          icon="users"
-          onPress={() => chooseProvider("general")}
-        />
-        <PrimaryButton
-          title="แพทย์ประจำบ้าน · คิวตัวอย่าง"
-          icon="user"
-          onPress={() => chooseProvider("resident")}
-        />
+        <BodyText>
+          เลือกแพทย์ที่ต้องการปรึกษา แล้วแตะชื่อเพื่อดูประวัติ
+        </BodyText>
+        <View style={styles.filters}>
+          {(["general", "resident"] as const).map((type) => (
+            <Pressable
+              key={type}
+              accessibilityRole="button"
+              accessibilityState={{ selected: providerFilter === type }}
+              onPress={() => setProviderFilter(type)}
+              style={[
+                styles.filter,
+                {
+                  backgroundColor:
+                    providerFilter === type
+                      ? colors.primary
+                      : colors.background,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color:
+                    providerFilter === type
+                      ? colors.primaryForeground
+                      : colors.foreground,
+                  fontSize: 16,
+                  fontWeight: "700",
+                  textAlign: "center",
+                }}
+              >
+                {type === "general" ? "แพทย์ทั่วไป" : "แพทย์ประจำบ้าน"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <BodyText>
+          {providerFilter === "general"
+            ? "ผู้ใช้จำนวนมาก อาจต้องรอ · สถานะคิวจำลอง"
+            : "คิวแพทย์ประจำบ้าน · สถานะจำลอง"}
+        </BodyText>
       </SurfaceCard>
+      {consultationDoctors
+        .filter((doctor) => doctor.provider === providerFilter)
+        .map((doctor) => (
+          <DoctorCard
+            key={doctor.id}
+            doctor={doctor}
+            onConsult={() => chooseProvider(doctor)}
+          />
+        ))}
       {error && !healthOpen ? (
         <Text accessibilityRole="alert" style={{ color: colors.destructive }}>
           {error}
         </Text>
       ) : null}
       {visibleCall ? (
-        <>
-          <View style={[styles.callPanel, { backgroundColor: colors.primary }]}>
-            <View style={styles.videoTile}>
-              <View style={styles.doctorAvatar}>
-                <Feather
-                  name="user"
-                  size={38}
-                  color={colors.secondaryForeground}
-                />
-              </View>
-              <Text style={styles.tileTitle}>
-                {visibleCall.provider === "general"
-                  ? "แพทย์ทั่วไปตัวอย่าง"
-                  : "แพทย์ประจำบ้านตัวอย่าง"}
-              </Text>
-              <Text style={styles.tileSub}>
-                ผู้ป่วย: {visibleCall.patientName}
-              </Text>
-              <Pill tone="teal">หน้าจอจำลอง</Pill>
-            </View>
-            <View style={styles.callControls}>
-              <IconButton
-                icon="phone-off"
-                label="จบการปรึกษาตัวอย่าง"
-                onPress={() => setCall(null)}
-              />
-            </View>
-          </View>
-          <SurfaceCard style={styles.infoCard}>
-            <BodyText>
-              ข้อมูลของผู้ป่วยที่เลือก: {visibleCall.patientName}
-            </BodyText>
-            <BodyText>โรคประจำตัว: {visibleCall.conditions}</BodyText>
-            <BodyText>แพ้ยา: {visibleCall.drugAllergies}</BodyText>
-            <BodyText>อาการ: {visibleCall.symptoms || "ยังไม่ระบุ"}</BodyText>
-            <BodyText>ยังไม่มีการส่งข้อมูลหรือเชื่อมต่อแพทย์จริง</BodyText>
-          </SurfaceCard>
-        </>
+        <VideoCallModal
+          key={`${selectedDoctor.id}-${visibleCall.patientId}`}
+          doctor={selectedDoctor}
+          patientName={visibleCall.patientName}
+          onEnd={() => setCall(null)}
+        />
       ) : null}
       <PrimaryButton
         title="กลับไปหน้าหลัก"
@@ -282,6 +301,16 @@ export default function TelemedicineScreen() {
 
 const styles = StyleSheet.create({
   page: { gap: 19 },
+  filters: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  filter: {
+    flexGrow: 1,
+    flexBasis: 130,
+    minHeight: 54,
+    justifyContent: "center",
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -289,67 +318,7 @@ const styles = StyleSheet.create({
   },
   headerCopy: { alignItems: "center", gap: 4 },
   title: { fontSize: 18, fontWeight: "800" },
-  callPanel: {
-    minHeight: 360,
-    borderRadius: 25,
-    padding: 18,
-    alignItems: "center",
-    justifyContent: "space-between",
-    overflow: "hidden",
-  },
-  callOrb: {
-    position: "absolute",
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    right: -110,
-    top: -90,
-    backgroundColor: "rgba(255,255,255,0.07)",
-  },
-  videoTile: {
-    flex: 1,
-    width: "100%",
-    borderRadius: 20,
-    backgroundColor: "#F2F7F7",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  doctorAvatar: {
-    width: 83,
-    height: 83,
-    borderRadius: 30,
-    backgroundColor: "#DDF3EF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 3,
-  },
-  tileTitle: { color: "#0D2C54", fontSize: 16, fontWeight: "800" },
-  tileSub: { color: "#6E8295", fontSize: 12 },
-  callControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 20,
-    paddingTop: 18,
-  },
-  controlCircle: {
-    width: 45,
-    height: 45,
-    borderRadius: 23,
-    backgroundColor: "rgba(255,255,255,0.17)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  endCall: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: "#C94343",
-  },
   infoCard: { gap: 9 },
-  infoHeading: { flexDirection: "row", alignItems: "center", gap: 8 },
-  infoTitle: { flex: 1, fontSize: 13, lineHeight: 19, fontWeight: "800" },
-  infoText: { fontSize: 12, lineHeight: 19 },
-  footer: { textAlign: "center", fontSize: 11, lineHeight: 17 },
+  infoTitle: { flex: 1, fontSize: 16, lineHeight: 25, fontWeight: "700" },
 });
+
