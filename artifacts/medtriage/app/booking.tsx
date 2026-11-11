@@ -196,7 +196,7 @@ export default function BookingScreen() {
             {kind === "checkin" ? "คิวเช็คอิน" : "นัดหมายล่วงหน้า"}
           </Eyebrow>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-            เลือกวันและเวลา
+            เลือกแพทย์และวันเวลา
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -242,7 +242,7 @@ export default function BookingScreen() {
       </SurfaceCard>
       <SectionTitle
         title="เลือกแพทย์"
-        detail="รายชื่อแพทย์ตัวอย่าง ชาย 3 คน หญิง 2 คน · คิวจำลองแยกตามแพทย์"
+        detail="เลือกจากแพทย์ตัวอย่าง 5 คน · ชาย 3 คน หญิง 2 คน · คิวจำลองแยกตามแพทย์"
       />
       <View style={styles.doctorList}>
         {sampleDoctors.map((doctor, index) => {
@@ -664,3 +664,4 @@ const styles = StyleSheet.create({
     marginTop: -7,
   },
 });
+
