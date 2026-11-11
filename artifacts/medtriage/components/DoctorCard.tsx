@@ -84,6 +84,12 @@ export default function DoctorCard({
           <Text style={[styles.hint, { color: colors.primary }]}>
             {expanded ? "ซ่อนประวัติ" : "แตะชื่อเพื่อดูประวัติ"}
           </Text>
+          <PrimaryButton
+            title="ปรึกษา"
+            icon="video"
+            onPress={onConsult}
+            style={{ marginTop: 14 }}
+          />
         </View>
         {doctor.portrait ? (
           <Image
@@ -119,11 +125,6 @@ export default function DoctorCard({
           <BodyText>สาขา: {doctor.specialty}</BodyText>
         </View>
       ) : null}
-      <PrimaryButton
-        title="ปรึกษาแพทย์ท่านนี้"
-        icon="video"
-        onPress={onConsult}
-      />
     </SurfaceCard>
   );
 }
