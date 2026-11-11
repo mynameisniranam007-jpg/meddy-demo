@@ -46,6 +46,7 @@ export default function VideoCallModal({
             <ImageBackground
               source={doctor.video}
               resizeMode="cover"
+              imageStyle={styles.videoImage}
               style={StyleSheet.absoluteFill}
             />
           ) : (
@@ -162,6 +163,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "#174E48",
   },
+  videoImage: { width: "100%", height: "100%" },
   noVideo: {
     position: "absolute",
     top: 0,
