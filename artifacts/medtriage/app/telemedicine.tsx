@@ -148,7 +148,7 @@ export default function TelemedicineScreen() {
           {activePatient?.profile.fullName || "เลือกผู้ป่วยหลังเข้าสู่ระบบ"}
         </Text>
         <BodyText>
-          เลือกแพทย์ที่ต้องการปรึกษา แล้วแตะชื่อเพื่อดูประวัติ
+          แตะการ์ดแพทย์เพื่อดูประวัติ แล้วเลือกปรึกษาแพทย์ที่ต้องการ
         </BodyText>
         <View style={styles.filters}>
           {(["general", "resident"] as const).map((type) => (
@@ -321,4 +321,3 @@ const styles = StyleSheet.create({
   infoCard: { gap: 9 },
   infoTitle: { flex: 1, fontSize: 16, lineHeight: 25, fontWeight: "700" },
 });
-
