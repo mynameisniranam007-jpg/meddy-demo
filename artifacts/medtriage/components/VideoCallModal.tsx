@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   ImageBackground,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -34,14 +35,12 @@ export default function VideoCallModal({
     return () => clearInterval(timer);
   }, []);
   const time = `${String(Math.floor(elapsed / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
-  return (
-    <Modal
-      visible
-      animationType="fade"
-      presentationStyle="fullScreen"
-      onRequestClose={onEnd}
+  const callScreen = (
+    <View
+      testID="video-call-overlay"
+      style={styles.screen}
+      accessibilityViewIsModal
     >
-      <View style={styles.screen} accessibilityViewIsModal>
         <View style={styles.video}>
           {doctor.video ? (
             <ImageBackground
@@ -131,16 +130,35 @@ export default function VideoCallModal({
             </Pressable>
           </View>
         </ScrollView>
-      </View>
+    </View>
+  );
+
+  // Native Modal fills the device screen. On web, use a fixed viewport layer
+  // because React Native Web's Modal can inherit the size of its parent.
+  if (Platform.OS === "web") return callScreen;
+
+  return (
+    <Modal
+      visible
+      animationType="fade"
+      presentationStyle="fullScreen"
+      onRequestClose={onEnd}
+    >
+      {callScreen}
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#0B2422" },
+  screen: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#0B2422",
+  },
   video: {
     flex: 1,
-    minHeight: 240,
+    minHeight: 0,
     overflow: "hidden",
     backgroundColor: "#174E48",
   },
@@ -187,7 +205,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(6,28,26,0.72)",
   },
   white: { color: "#FFFFFF", fontSize: 14, lineHeight: 22 },
-  controlsScroll: { flexGrow: 0, maxHeight: "45%" },
+  controlsScroll: { flexGrow: 0, flexShrink: 0, maxHeight: "45%" },
   controls: {
     padding: 16,
     gap: 16,
